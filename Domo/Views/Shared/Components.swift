@@ -261,9 +261,14 @@ struct ProfileAvatar: View {
 
 #Preview("WarrantyRow") {
     VStack {
-        ForEach(WarrantyItem.samples) { item in
-            WarrantyRow(item: item)
-        }
+        WarrantyRow(item: WarrantyItem(
+            productName: "MacBook Pro",
+            storeName: "Apple Store",
+            purchaseDate: .now,
+            warrantyYears: 1,
+            price: 2799,
+            category: .electronics
+        ))
     }
     .padding()
     .preferredColorScheme(.dark)

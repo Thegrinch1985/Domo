@@ -1,10 +1,15 @@
 import SwiftUI
 import LocalAuthentication
+import AuthenticationServices
+
+// MARK: - Login View
 
 struct LoginView: View {
     
     @EnvironmentObject private var appState: AppState
+    @Environment(\.modelContext) private var modelContext
     
+    @State private var showSignUp = false
     @State private var email = ""
     @State private var password = ""
     @State private var isSecure = true
@@ -17,27 +22,25 @@ struct LoginView: View {
     
     var body: some View {
         ZStack {
-            // Background
             backgroundView
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     Spacer().frame(height: 80)
                     
-                    // Logo & Title
                     logoSection
                         .padding(.bottom, 48)
                     
-                    // Login Form
                     formSection
                         .padding(.horizontal, DomoTheme.screenPadding)
                         .padding(.bottom, 24)
                     
-                    // Biometric Button
                     biometricSection
+                        .padding(.bottom, 16)
+                    
+                    appleSignInSection
                         .padding(.bottom, 32)
                     
-                    // Footer
                     footerSection
                     
                     Spacer().frame(height: 40)
@@ -58,6 +61,10 @@ struct LoginView: View {
         } message: {
             Text(errorMessage)
         }
+        .sheet(isPresented: $showSignUp) {
+            SignUpView()
+                .environmentObject(appState)
+        }
     }
     
     // MARK: - Background
@@ -67,7 +74,6 @@ struct LoginView: View {
             Color(.systemBackground)
                 .ignoresSafeArea()
             
-            // Floating gradient orbs
             Circle()
                 .fill(.blue.opacity(0.12))
                 .frame(width: 300, height: 300)
@@ -93,7 +99,6 @@ struct LoginView: View {
     private var logoSection: some View {
         VStack(spacing: 16) {
             ZStack {
-                // Glow ring
                 Circle()
                     .fill(
                         RadialGradient(
@@ -105,7 +110,6 @@ struct LoginView: View {
                     )
                     .frame(width: 120, height: 120)
                 
-                // Icon container
                 ZStack {
                     RoundedRectangle(cornerRadius: 28)
                         .fill(DomoTheme.brandGradient)
@@ -136,7 +140,7 @@ struct LoginView: View {
     
     private var formSection: some View {
         VStack(spacing: 16) {
-            // Email Field
+            // Email
             VStack(alignment: .leading, spacing: 8) {
                 Text("Email")
                     .font(.caption.weight(.semibold))
@@ -163,7 +167,7 @@ struct LoginView: View {
                 )
             }
             
-            // Password Field
+            // Password
             VStack(alignment: .leading, spacing: 8) {
                 Text("Password")
                     .font(.caption.weight(.semibold))
@@ -200,15 +204,6 @@ struct LoginView: View {
                 )
             }
             
-            // Forgot password
-            HStack {
-                Spacer()
-                Button("Forgot password?") { }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.blue)
-            }
-            .padding(.top, 2)
-            
             // Sign In Button
             Button {
                 signIn()
@@ -238,45 +233,73 @@ struct LoginView: View {
     // MARK: - Biometric
     
     private var biometricSection: some View {
-        VStack(spacing: 20) {
-            // Divider
-            HStack(spacing: 16) {
-                Rectangle()
-                    .fill(.white.opacity(0.08))
-                    .frame(height: 1)
-                Text("or")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Rectangle()
-                    .fill(.white.opacity(0.08))
-                    .frame(height: 1)
-            }
-            .padding(.horizontal, DomoTheme.screenPadding)
-            
-            // Biometric button
-            Button {
-                authenticateWithBiometrics()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: biometricIcon)
-                        .font(.system(size: 22))
-                    Text("Sign in with \(biometricName)")
-                        .font(.subheadline.weight(.semibold))
+        Group {
+            if AuthService.biometricType != .none && AuthService.hasPreviousSession {
+                VStack(spacing: 20) {
+                    dividerRow
+                    
+                    Button {
+                        authenticateWithBiometrics()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: AuthService.biometricType.icon)
+                                .font(.system(size: 22))
+                            Text("Sign in with \(AuthService.biometricType.label)")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .background(Color(.systemGray6).opacity(0.6))
+                        .foregroundStyle(.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+                        )
+                    }
+                    .padding(.horizontal, DomoTheme.screenPadding)
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 54)
-                .background(Color(.systemGray6).opacity(0.6))
-                .foregroundStyle(.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-                )
+                .opacity(animateContent ? 1 : 0)
+                .offset(y: animateContent ? 0 : 20)
             }
+        }
+    }
+    
+    // MARK: - Sign in with Apple
+    
+    private var appleSignInSection: some View {
+        VStack(spacing: 20) {
+            if AuthService.biometricType == .none || !AuthService.hasPreviousSession {
+                dividerRow
+            }
+            
+            SignInWithAppleButton(.signIn) { request in
+                request.requestedScopes = [.fullName, .email]
+            } onCompletion: { result in
+                handleAppleSignIn(result: result)
+            }
+            .signInWithAppleButtonStyle(.white)
+            .frame(height: 54)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, DomoTheme.screenPadding)
         }
         .opacity(animateContent ? 1 : 0)
         .offset(y: animateContent ? 0 : 20)
+    }
+    
+    private var dividerRow: some View {
+        HStack(spacing: 16) {
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
+            Text("or")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
+        }
+        .padding(.horizontal, DomoTheme.screenPadding)
     }
     
     // MARK: - Footer
@@ -287,7 +310,7 @@ struct LoginView: View {
                 Text("Don't have an account?")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Button("Sign Up") { signIn() }
+                Button("Sign Up") { showSignUp = true }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.blue)
             }
@@ -295,63 +318,362 @@ struct LoginView: View {
         .opacity(animateContent ? 1 : 0)
     }
     
-    // MARK: - Biometric Helpers
+    // MARK: - Actions
     
-    private var biometricIcon: String {
-        let context = LAContext()
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
-        switch context.biometryType {
-        case .faceID: return "faceid"
-        case .touchID: return "touchid"
-        default: return "lock.fill"
+    private func signIn() {
+        withAnimation { isLoading = true }
+        
+        do {
+            let user = try AuthService.signIn(
+                email: email,
+                password: password,
+                context: modelContext
+            )
+            appState.setUser(user)
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        
+        withAnimation { isLoading = false }
+    }
+    
+    private func authenticateWithBiometrics() {
+        withAnimation { isLoading = true }
+        
+        Task {
+            do {
+                let user = try await AuthService.signInWithBiometrics(context: modelContext)
+                appState.setUser(user)
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+            withAnimation { isLoading = false }
         }
     }
     
-    private var biometricName: String {
-        let context = LAContext()
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
-        switch context.biometryType {
-        case .faceID: return "Face ID"
-        case .touchID: return "Touch ID"
-        default: return "Passcode"
+    private func handleAppleSignIn(result: Result<ASAuthorization, Error>) {
+        do {
+            let user = try AuthService.handleAppleSignIn(result: result, context: modelContext)
+            appState.setUser(user)
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+}
+
+// MARK: - Sign Up View
+
+struct SignUpView: View {
+    
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var fullName = ""
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var isSecure = true
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 28) {
+                    // Header
+                    VStack(spacing: 8) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 22)
+                                .fill(DomoTheme.brandGradient)
+                                .frame(width: 64, height: 64)
+                                .shadow(color: .blue.opacity(0.3), radius: 16, y: 6)
+                            
+                            Image(systemName: "person.badge.plus")
+                                .font(.system(size: 26, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.top, 16)
+                        
+                        Text("Create Account")
+                            .font(.title2.weight(.bold))
+                        
+                        Text("Set up your Domo account to get started")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    // Form
+                    VStack(spacing: 16) {
+                        formField(
+                            label: "Full Name",
+                            icon: "person.fill",
+                            placeholder: "John Doe",
+                            text: $fullName,
+                            contentType: .name,
+                            capitalize: .words
+                        )
+                        
+                        formField(
+                            label: "Email",
+                            icon: "envelope.fill",
+                            placeholder: "your@email.com",
+                            text: $email,
+                            contentType: .emailAddress,
+                            keyboard: .emailAddress
+                        )
+                        
+                        // Password
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Password")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                
+                                if isSecure {
+                                    SecureField("At least 6 characters", text: $password)
+                                        .textContentType(.newPassword)
+                                } else {
+                                    TextField("At least 6 characters", text: $password)
+                                        .textContentType(.newPassword)
+                                }
+                                
+                                Button { isSecure.toggle() } label: {
+                                    Image(systemName: isSecure ? "eye.slash.fill" : "eye.fill")
+                                        .font(.system(size: 15))
+                                        .foregroundStyle(.tertiary)
+                                }
+                            }
+                            .padding(16)
+                            .background(Color(.systemGray6).opacity(0.6))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                            )
+                        }
+                        
+                        // Confirm Password
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Confirm Password")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "lock.badge.checkmark")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                
+                                SecureField("Re-enter your password", text: $confirmPassword)
+                                    .textContentType(.newPassword)
+                            }
+                            .padding(16)
+                            .background(Color(.systemGray6).opacity(0.6))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                            )
+                        }
+                        
+                        // Password strength indicator
+                        if !password.isEmpty {
+                            HStack(spacing: 6) {
+                                ForEach(0..<4) { i in
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(i < passwordStrength ? strengthColor : Color(.systemGray5))
+                                        .frame(height: 4)
+                                }
+                                Text(strengthLabel)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, DomoTheme.screenPadding)
+                    
+                    // Create Account Button
+                    Button {
+                        createAccount()
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            }
+                            Text("Create Account")
+                                .font(.headline)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .background(formIsValid ? DomoTheme.brandGradient : LinearGradient(colors: [.gray], startPoint: .leading, endPoint: .trailing))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: formIsValid ? .blue.opacity(0.3) : .clear, radius: 12, y: 6)
+                    }
+                    .disabled(!formIsValid || isLoading)
+                    .padding(.horizontal, DomoTheme.screenPadding)
+                    
+                    // Apple Sign Up
+                    VStack(spacing: 16) {
+                        HStack(spacing: 16) {
+                            Rectangle()
+                                .fill(.white.opacity(0.08))
+                                .frame(height: 1)
+                            Text("or")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                            Rectangle()
+                                .fill(.white.opacity(0.08))
+                                .frame(height: 1)
+                        }
+                        .padding(.horizontal, DomoTheme.screenPadding)
+                        
+                        SignInWithAppleButton(.signUp) { request in
+                            request.requestedScopes = [.fullName, .email]
+                        } onCompletion: { result in
+                            handleAppleSignUp(result: result)
+                        }
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(height: 54)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .padding(.horizontal, DomoTheme.screenPadding)
+                    }
+                }
+                .padding(.bottom, 40)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .alert("Registration Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - Helpers
+    
+    private func formField(
+        label: String,
+        icon: String,
+        placeholder: String,
+        text: Binding<String>,
+        contentType: UITextContentType,
+        keyboard: UIKeyboardType = .default,
+        capitalize: TextInputAutocapitalization = .never
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                
+                TextField(placeholder, text: text)
+                    .textContentType(contentType)
+                    .keyboardType(keyboard)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(capitalize)
+            }
+            .padding(16)
+            .background(Color(.systemGray6).opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+            )
+        }
+    }
+    
+    private var formIsValid: Bool {
+        !fullName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !email.isEmpty &&
+        password.count >= 6 &&
+        password == confirmPassword
+    }
+    
+    private var passwordStrength: Int {
+        var s = 0
+        if password.count >= 6 { s += 1 }
+        if password.count >= 10 { s += 1 }
+        if password.range(of: "[A-Z]", options: .regularExpression) != nil { s += 1 }
+        if password.range(of: "[0-9!@#$%^&*]", options: .regularExpression) != nil { s += 1 }
+        return s
+    }
+    
+    private var strengthColor: Color {
+        switch passwordStrength {
+        case 1: return .red
+        case 2: return .orange
+        case 3: return .yellow
+        default: return .green
+        }
+    }
+    
+    private var strengthLabel: String {
+        switch passwordStrength {
+        case 1: return "Weak"
+        case 2: return "Fair"
+        case 3: return "Good"
+        default: return "Strong"
         }
     }
     
     // MARK: - Actions
     
-    private func signIn() {
-        withAnimation(.easeInOut(duration: 0.2)) { isLoading = true }
-        
-        // Simulate network call
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                isLoading = false
-                appState.isLoggedIn = true
-            }
-        }
-    }
-    
-    private func authenticateWithBiometrics() {
-        let context = LAContext()
-        var error: NSError?
-        
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-            // Fallback: just sign in
-            signIn()
+    private func createAccount() {
+        guard password == confirmPassword else {
+            errorMessage = "Passwords do not match."
+            showError = true
             return
         }
         
-        context.evaluatePolicy(
-            .deviceOwnerAuthenticationWithBiometrics,
-            localizedReason: "Sign in to Domo"
-        ) { success, _ in
-            DispatchQueue.main.async {
-                if success {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        appState.isLoggedIn = true
-                    }
-                }
-            }
+        isLoading = true
+        
+        do {
+            let user = try AuthService.register(
+                fullName: fullName,
+                email: email,
+                password: password,
+                context: modelContext
+            )
+            appState.setUser(user)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        
+        isLoading = false
+    }
+    
+    private func handleAppleSignUp(result: Result<ASAuthorization, Error>) {
+        do {
+            let user = try AuthService.handleAppleSignIn(result: result, context: modelContext)
+            appState.setUser(user)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
         }
     }
 }

@@ -13,7 +13,20 @@ struct DomoApp: App {
                 .environmentObject(appState)
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
+                .onAppear {
+                    // modelContext is injected via .modelContainer below;
+                    // we wire it into the store in the first view that has access.
+                }
         }
-        .modelContainer(for: Document.self)
+        .modelContainer(for: [
+            Document.self,
+            WarrantyItem.self,
+            Subscription.self,
+            Vehicle.self,
+            ServiceLog.self,
+            InsurancePolicy.self,
+            MaintenanceTask.self,
+            UserAccount.self
+        ])
     }
 }

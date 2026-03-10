@@ -1,18 +1,41 @@
 import SwiftUI
+import SwiftData
 import Combine
 
-/// Central data store for all Domo data.
-/// In a production app, persistence would be handled via SwiftData or CoreData.
+/// Central data store for all Domo data, now backed by SwiftData.
+/// Views can also use @Query directly, but this store provides
+/// convenience methods for CRUD operations and computed alerts.
 @MainActor
 final class DomoStore: ObservableObject {
     
-    // MARK: - Published Data
+    // The model context is injected from the environment
+    var modelContext: ModelContext?
     
-    @Published var warranties: [WarrantyItem] = WarrantyItem.samples
-    @Published var subscriptions: [Subscription] = Subscription.samples
-    @Published var vehicles: [Vehicle] = Vehicle.samples
-    @Published var insurancePolicies: [InsurancePolicy] = InsurancePolicy.samples
-    @Published var maintenanceTasks: [MaintenanceTask] = MaintenanceTask.samples
+    // MARK: - Fetch Helpers
+    
+    var warranties: [WarrantyItem] {
+        fetch(FetchDescriptor<WarrantyItem>(sortBy: [SortDescriptor(\.purchaseDate, order: .reverse)]))
+    }
+    
+    var subscriptions: [Subscription] {
+        fetch(FetchDescriptor<Subscription>(sortBy: [SortDescriptor(\.name)]))
+    }
+    
+    var vehicles: [Vehicle] {
+        fetch(FetchDescriptor<Vehicle>(sortBy: [SortDescriptor(\.year, order: .reverse)]))
+    }
+    
+    var insurancePolicies: [InsurancePolicy] {
+        fetch(FetchDescriptor<InsurancePolicy>(sortBy: [SortDescriptor(\.expiryDate)]))
+    }
+    
+    var maintenanceTasks: [MaintenanceTask] {
+        fetch(FetchDescriptor<MaintenanceTask>(sortBy: [SortDescriptor(\.title)]))
+    }
+    
+    private func fetch<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) -> [T] {
+        (try? modelContext?.fetch(descriptor)) ?? []
+    }
     
     // MARK: - Computed Properties
     
@@ -28,7 +51,7 @@ final class DomoStore: ObservableObject {
         warranties.filter(\.isExpiringSoon).forEach {
             alerts.append("\($0.productName) warranty expires in \($0.daysRemaining) days")
         }
-        subscriptions.filter { $0.daysUntilRenewal <= 3 }.forEach {
+        subscriptions.filter { $0.daysUntilRenewal <= 3 && $0.isActive }.forEach {
             alerts.append("\($0.name) renews in \($0.daysUntilRenewal) days")
         }
         maintenanceTasks.filter { $0.isOverdue || $0.isDueSoon }.forEach {
@@ -41,61 +64,116 @@ final class DomoStore: ObservableObject {
         return alerts
     }
     
+    // MARK: - Refresh trigger (call after mutations to refresh views)
+    
+    func refresh() {
+        objectWillChange.send()
+    }
+    
     // MARK: - CRUD: Warranties
     
     func addWarranty(_ item: WarrantyItem) {
-        warranties.append(item)
+        modelContext?.insert(item)
+        save()
     }
     
-    func deleteWarranty(at offsets: IndexSet) {
-        warranties.remove(atOffsets: offsets)
+    func deleteWarranty(_ item: WarrantyItem) {
+        modelContext?.delete(item)
+        save()
     }
     
-    func updateWarranty(_ item: WarrantyItem) {
-        guard let index = warranties.firstIndex(where: { $0.id == item.id }) else { return }
-        warranties[index] = item
+    func deleteWarranties(at offsets: IndexSet) {
+        let items = warranties
+        for index in offsets {
+            modelContext?.delete(items[index])
+        }
+        save()
     }
     
     // MARK: - CRUD: Subscriptions
     
     func addSubscription(_ sub: Subscription) {
-        subscriptions.append(sub)
+        modelContext?.insert(sub)
+        save()
     }
     
-    func deleteSubscription(at offsets: IndexSet) {
-        subscriptions.remove(atOffsets: offsets)
+    func deleteSubscription(_ sub: Subscription) {
+        modelContext?.delete(sub)
+        save()
+    }
+    
+    func deleteSubscriptions(at offsets: IndexSet) {
+        let items = subscriptions
+        for index in offsets {
+            modelContext?.delete(items[index])
+        }
+        save()
     }
     
     func toggleSubscription(_ sub: Subscription) {
-        guard let index = subscriptions.firstIndex(where: { $0.id == sub.id }) else { return }
-        subscriptions[index].isActive.toggle()
+        sub.isActive.toggle()
+        save()
     }
     
     // MARK: - CRUD: Vehicles
     
     func addVehicle(_ vehicle: Vehicle) {
-        vehicles.append(vehicle)
+        modelContext?.insert(vehicle)
+        save()
     }
     
-    func addServiceLog(_ log: ServiceLog, to vehicleID: UUID) {
-        guard let index = vehicles.firstIndex(where: { $0.id == vehicleID }) else { return }
-        vehicles[index].serviceLogs.append(log)
+    func deleteVehicle(_ vehicle: Vehicle) {
+        modelContext?.delete(vehicle)
+        save()
+    }
+    
+    func addServiceLog(_ log: ServiceLog, to vehicle: Vehicle) {
+        log.vehicle = vehicle
+        vehicle.serviceLogs.append(log)
+        save()
     }
     
     // MARK: - CRUD: Insurance
     
     func addPolicy(_ policy: InsurancePolicy) {
-        insurancePolicies.append(policy)
+        modelContext?.insert(policy)
+        save()
     }
     
-    func deletePolicy(at offsets: IndexSet) {
-        insurancePolicies.remove(atOffsets: offsets)
+    func deletePolicy(_ policy: InsurancePolicy) {
+        modelContext?.delete(policy)
+        save()
+    }
+    
+    func deletePolicies(at offsets: IndexSet) {
+        let items = insurancePolicies
+        for index in offsets {
+            modelContext?.delete(items[index])
+        }
+        save()
     }
     
     // MARK: - CRUD: Maintenance
     
+    func addTask(_ task: MaintenanceTask) {
+        modelContext?.insert(task)
+        save()
+    }
+    
+    func deleteTask(_ task: MaintenanceTask) {
+        modelContext?.delete(task)
+        save()
+    }
+    
     func markTaskComplete(_ task: MaintenanceTask) {
-        guard let index = maintenanceTasks.firstIndex(where: { $0.id == task.id }) else { return }
-        maintenanceTasks[index].lastCompleted = Date()
+        task.lastCompleted = Date()
+        save()
+    }
+    
+    // MARK: - Save
+    
+    private func save() {
+        try? modelContext?.save()
+        refresh()
     }
 }

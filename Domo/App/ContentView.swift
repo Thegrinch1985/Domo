@@ -3,6 +3,8 @@ import SwiftUI
 struct ContentView: View {
     
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var store: DomoStore
+    @Environment(\.modelContext) private var modelContext
     @Namespace private var tabAnimation
     
     var body: some View {
@@ -22,6 +24,10 @@ struct ContentView: View {
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: appState.isLoggedIn)
+        .onAppear {
+            // Wire model context into DomoStore
+            store.modelContext = modelContext
+        }
     }
     
     private var mainTabView: some View {

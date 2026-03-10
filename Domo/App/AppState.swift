@@ -6,13 +6,23 @@ final class AppState: ObservableObject {
     
     @Published var selectedTab: TabItem = .home
     @Published var isOnboarded: Bool = false
+    
+    // Auth state
     @Published var isLoggedIn: Bool = false
-    @Published var userName: String = "Howie"
-    @Published var userEmail: String = "howie@domo.app"
-    @Published var profileInitials: String = "H"
+    @Published var currentUser: UserAccount?
+    
+    var userName: String { currentUser?.fullName ?? "" }
+    var userEmail: String { currentUser?.email ?? "" }
+    var profileInitials: String { currentUser?.initials ?? "?" }
+    
+    func setUser(_ user: UserAccount) {
+        currentUser = user
+        isLoggedIn = true
+    }
     
     func signOut() {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            currentUser = nil
             isLoggedIn = false
             selectedTab = .home
         }

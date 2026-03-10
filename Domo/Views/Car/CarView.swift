@@ -4,6 +4,7 @@ struct CarView: View {
     
     @EnvironmentObject private var store: DomoStore
     @State private var showAddLog = false
+    @State private var showAddVehicle = false
     
     var body: some View {
         NavigationStack {
@@ -19,20 +20,26 @@ struct CarView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showAddLog = true
+                        if store.vehicles.isEmpty {
+                            showAddVehicle = true
+                        } else {
+                            showAddLog = true
+                        }
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 22))
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(.blue)
                     }
-                    .disabled(store.vehicles.isEmpty)
                 }
             }
             .sheet(isPresented: $showAddLog) {
                 if let vehicle = store.vehicles.first {
-                    AddServiceLogView(vehicleID: vehicle.id)
+                    AddServiceLogView(vehicle: vehicle)
                 }
+            }
+            .sheet(isPresented: $showAddVehicle) {
+                AddVehicleView()
             }
         }
     }
@@ -236,7 +243,9 @@ struct CarView: View {
             title: "No Vehicle Added",
             subtitle: "Add your car to track maintenance and service history.",
             buttonTitle: "Add Vehicle"
-        ) { }
+        ) {
+            showAddVehicle = true
+        }
     }
 }
 
@@ -296,7 +305,7 @@ struct ServiceLogRow: View {
 // MARK: - AddServiceLogView
 
 struct AddServiceLogView: View {
-    let vehicleID: UUID
+    let vehicle: Vehicle
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: DomoStore
     
@@ -347,7 +356,64 @@ struct AddServiceLogView: View {
             cost: Double(cost),
             notes: notes.isEmpty ? nil : notes
         )
-        store.addServiceLog(log, to: vehicleID)
+        store.addServiceLog(log, to: vehicle)
+        dismiss()
+    }
+}
+
+// MARK: - AddVehicleView
+
+struct AddVehicleView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: DomoStore
+    
+    @State private var make = ""
+    @State private var model = ""
+    @State private var year = Calendar.current.component(.year, from: Date())
+    @State private var plate = ""
+    @State private var currentMileage = ""
+    @State private var nextServiceMileage = ""
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Vehicle Info") {
+                    TextField("Make (e.g. BMW)", text: $make)
+                    TextField("Model (e.g. 3 Series)", text: $model)
+                    Stepper("Year: \(year)", value: $year, in: 1990...Calendar.current.component(.year, from: Date()) + 1)
+                    TextField("Plate Number", text: $plate)
+                        .textInputAutocapitalization(.characters)
+                }
+                Section("Mileage") {
+                    TextField("Current Mileage (km)", text: $currentMileage)
+                        .keyboardType(.numberPad)
+                    TextField("Next Service Mileage (km)", text: $nextServiceMileage)
+                        .keyboardType(.numberPad)
+                }
+            }
+            .navigationTitle("Add Vehicle")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }
+                        .fontWeight(.semibold)
+                        .disabled(make.isEmpty || model.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func save() {
+        let vehicle = Vehicle(
+            make: make,
+            model: model,
+            year: year,
+            plate: plate.uppercased(),
+            currentMileage: Int(currentMileage) ?? 0,
+            nextServiceMileage: Int(nextServiceMileage) ?? 10000
+        )
+        store.addVehicle(vehicle)
         dismiss()
     }
 }
