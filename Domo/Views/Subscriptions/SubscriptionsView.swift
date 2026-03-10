@@ -7,74 +7,132 @@ struct SubscriptionsView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                // Summary card
-                spendSummaryCard
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 8, trailing: 20))
-                
-                Section("Active") {
-                    ForEach(store.subscriptions.filter(\.isActive)) { sub in
-                        SubscriptionRow(sub: sub) {
-                            store.toggleSubscription(sub)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: DomoTheme.sectionSpacing) {
+                    // Spend hero card
+                    spendHeroCard
+                    
+                    // Active subscriptions
+                    let active = store.subscriptions.filter(\.isActive)
+                    if !active.isEmpty {
+                        VStack(alignment: .leading, spacing: 14) {
+                            SectionHeader(title: "Active")
+                            VStack(spacing: 8) {
+                                ForEach(active) { sub in
+                                    SubscriptionRow(sub: sub) {
+                                        withAnimation(.spring(response: 0.3)) {
+                                            store.toggleSubscription(sub)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                    .onDelete { offsets in store.deleteSubscription(at: offsets) }
-                }
-                
-                let inactive = store.subscriptions.filter { !$0.isActive }
-                if !inactive.isEmpty {
-                    Section("Inactive") {
-                        ForEach(inactive) { sub in
-                            SubscriptionRow(sub: sub) {
-                                store.toggleSubscription(sub)
+                    
+                    // Inactive subscriptions
+                    let inactive = store.subscriptions.filter { !$0.isActive }
+                    if !inactive.isEmpty {
+                        VStack(alignment: .leading, spacing: 14) {
+                            SectionHeader(title: "Paused")
+                            VStack(spacing: 8) {
+                                ForEach(inactive) { sub in
+                                    SubscriptionRow(sub: sub) {
+                                        withAnimation(.spring(response: 0.3)) {
+                                            store.toggleSubscription(sub)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                .padding(.horizontal, DomoTheme.screenPadding)
+                .padding(.top, 8)
+                .padding(.bottom, 40)
             }
+            .background(Color(.systemBackground))
             .navigationTitle("Subscriptions")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showAddSheet = true } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.blue)
                     }
                 }
             }
             .sheet(isPresented: $showAddSheet) {
                 AddSubscriptionView()
             }
-        }
-    }
-    
-    private var spendSummaryCard: some View {
-        VStack(spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Monthly spend")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(store.totalMonthlySpend.formatted(.currency(code: "EUR")))
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Yearly")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(store.totalYearlySpend.formatted(.currency(code: "EUR")))
-                        .font(.title3.bold())
-                        .foregroundStyle(.secondary)
+            .overlay {
+                if store.subscriptions.isEmpty {
+                    DomoEmptyState(
+                        icon: "arrow.triangle.2.circlepath",
+                        title: "No Subscriptions",
+                        subtitle: "Track your recurring payments to stay on top of your spending.",
+                        buttonTitle: "Add Subscription"
+                    ) {
+                        showAddSheet = true
+                    }
                 }
             }
         }
-        .padding(20)
-        .background(.blue.gradient.opacity(0.15))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(.blue.opacity(0.2))
+    }
+    
+    // MARK: - Spend Hero Card
+    
+    private var spendHeroCard: some View {
+        VStack(spacing: 0) {
+            // Top section with monthly spend
+            VStack(spacing: 8) {
+                Text("Monthly Spend")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                
+                Text(store.totalMonthlySpend.formatted(.currency(code: "EUR")))
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText())
+            }
+            .padding(.top, 28)
+            .padding(.bottom, 20)
+            
+            // Bottom section with yearly
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Yearly estimate")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text(store.totalYearlySpend.formatted(.currency(code: "EUR")))
+                        .font(.title3.bold())
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Active")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("\(store.subscriptions.filter(\.isActive).count) services")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+            }
+            .padding(20)
+            .background(.white.opacity(0.1))
+        }
+        .frame(maxWidth: .infinity)
+        .background(
+            LinearGradient(
+                colors: [.blue, .indigo, .purple.opacity(0.8)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
+        .shadow(color: .blue.opacity(0.3), radius: 20, y: 10)
     }
 }
 
@@ -86,45 +144,68 @@ struct SubscriptionRow: View {
     
     var body: some View {
         HStack(spacing: 14) {
-            // Icon
+            // Colored icon
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.quaternary)
-                    .frame(width: 44, height: 44)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(hex: sub.colorHex).gradient)
+                    .frame(width: 46, height: 46)
                 Image(systemName: sub.iconName)
-                    .font(.system(size: 20))
-                    .foregroundStyle(sub.isActive ? .primary : .secondary)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
             }
+            .opacity(sub.isActive ? 1 : 0.5)
             
             // Info
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(sub.name)
-                    .font(.subheadline.weight(.medium))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(sub.isActive ? .primary : .secondary)
-                Text("Renews \(sub.renewalDate.formatted(.dateTime.month().day()))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Text(sub.billingCycle.rawValue)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    if sub.isActive {
+                        Text("·")
+                            .foregroundStyle(.tertiary)
+                        Text("Renews \(sub.renewalDate.formatted(.dateTime.month().day()))")
+                            .font(.caption)
+                            .foregroundStyle(sub.daysUntilRenewal <= 3 ? .orange : .secondary)
+                    }
+                }
             }
             
             Spacer()
             
-            // Price + toggle
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(sub.price.formatted(.currency(code: "EUR")))
-                    .font(.subheadline.bold())
-                Text(sub.billingCycle.rawValue)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+            // Price
+            Text(sub.price.formatted(.currency(code: "EUR")))
+                .font(.subheadline.bold())
+                .foregroundStyle(sub.isActive ? .primary : .secondary)
         }
-        .swipeActions(edge: .leading) {
-            Button(sub.isActive ? "Pause" : "Resume") { onToggle() }
-                .tint(sub.isActive ? .orange : .green)
+        .padding(14)
+        .background(DomoTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+        .overlay(
+            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+        )
+        .contextMenu {
+            Button {
+                onToggle()
+            } label: {
+                Label(sub.isActive ? "Pause" : "Resume",
+                      systemImage: sub.isActive ? "pause.circle" : "play.circle")
+            }
+            
+            Button(role: .destructive) {
+                // TODO: delete
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 }
 
-// MARK: - AddSubscriptionView (Placeholder)
+// MARK: - AddSubscriptionView
 
 struct AddSubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -163,7 +244,9 @@ struct AddSubscriptionView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.disabled(name.isEmpty)
+                    Button("Save") { save() }
+                        .fontWeight(.semibold)
+                        .disabled(name.isEmpty)
                 }
             }
         }
@@ -187,4 +270,5 @@ struct AddSubscriptionView: View {
 #Preview {
     SubscriptionsView()
         .environmentObject(DomoStore())
+        .preferredColorScheme(.dark)
 }

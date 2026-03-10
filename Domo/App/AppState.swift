@@ -6,7 +6,17 @@ final class AppState: ObservableObject {
     
     @Published var selectedTab: TabItem = .home
     @Published var isOnboarded: Bool = false
+    @Published var isLoggedIn: Bool = false
     @Published var userName: String = "Howie"
+    @Published var userEmail: String = "howie@domo.app"
+    @Published var profileInitials: String = "H"
+    
+    func signOut() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            isLoggedIn = false
+            selectedTab = .home
+        }
+    }
     
     // MARK: - Tab Selection
     enum TabItem: Int, CaseIterable {
@@ -29,10 +39,10 @@ final class AppState: ObservableObject {
         var icon: String {
             switch self {
             case .home:          return "house.fill"
-            case .documents:     return "doc.fill"
-            case .subscriptions: return "arrow.clockwise.circle.fill"
+            case .documents:     return "doc.text.fill"
+            case .subscriptions: return "arrow.triangle.2.circlepath"
             case .car:           return "car.fill"
-            case .vault:         return "lock.shield.fill"
+            case .vault:         return "shield.checkered"
             }
         }
     }

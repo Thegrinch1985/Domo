@@ -55,15 +55,3 @@ extension Double {
         formatted(.currency(code: "EUR"))
     }
 }
-
-// MARK: - View Modifiers
-
-extension View {
-    /// Card-style background with rounded corners
-    func cardStyle(cornerRadius: CGFloat = 16) -> some View {
-        self
-            .padding(16)
-            .background(.quaternary)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-    }
-}

@@ -14,13 +14,17 @@ struct CarView: View {
                     vehicleContent(vehicle)
                 }
             }
+            .background(Color(.systemBackground))
             .navigationTitle("My Car")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showAddLog = true
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.blue)
                     }
                     .disabled(store.vehicles.isEmpty)
                 }
@@ -34,33 +38,191 @@ struct CarView: View {
     }
     
     private func vehicleContent(_ vehicle: Vehicle) -> some View {
-        List {
-            // Vehicle card
-            Section {
-                vehicleCard(vehicle)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: DomoTheme.sectionSpacing) {
+                // Vehicle hero card
+                vehicleHeroCard(vehicle)
+                
+                // Service status gauges
+                serviceStatusSection(vehicle)
+                
+                // Service log
+                serviceLogSection(vehicle)
             }
+            .padding(.horizontal, DomoTheme.screenPadding)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
+        }
+    }
+    
+    // MARK: - Vehicle Hero Card
+    
+    private func vehicleHeroCard(_ vehicle: Vehicle) -> some View {
+        VStack(spacing: 0) {
+            // Top section
+            VStack(spacing: 12) {
+                // Car icon
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.1))
+                        .frame(width: 72, height: 72)
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 30, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+                
+                Text(vehicle.displayName)
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                
+                Text(vehicle.plate)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .textCase(.uppercase)
+                    .kerning(3)
+            }
+            .padding(.top, 28)
+            .padding(.bottom, 20)
             
-            // Service status
-            Section("Service Status") {
-                LabeledContent("Current Mileage") {
-                    Text("\(vehicle.currentMileage.formatted()) km")
-                        .fontWeight(.medium)
+            // Bottom stats
+            HStack {
+                VStack(spacing: 4) {
+                    Text("\(vehicle.currentMileage.formatted())")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                    Text("Current km")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
-                LabeledContent("Next Service") {
-                    Text("\(vehicle.nextServiceMileage.formatted()) km")
-                        .foregroundStyle(vehicle.isServiceDue ? .orange : .primary)
-                        .fontWeight(.medium)
+                
+                Spacer()
+                
+                Rectangle()
+                    .fill(.white.opacity(0.15))
+                    .frame(width: 1, height: 30)
+                
+                Spacer()
+                
+                VStack(spacing: 4) {
+                    Text("\(vehicle.serviceLogs.count)")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                    Text("Services")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
-                LabeledContent("Distance Remaining") {
+                
+                Spacer()
+                
+                Rectangle()
+                    .fill(.white.opacity(0.15))
+                    .frame(width: 1, height: 30)
+                
+                Spacer()
+                
+                VStack(spacing: 4) {
+                    let totalCost = vehicle.serviceLogs.compactMap(\.cost).reduce(0, +)
+                    Text(totalCost.formatted(.currency(code: "EUR")))
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                    Text("Total spend")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+            .padding(20)
+            .background(.white.opacity(0.08))
+        }
+        .frame(maxWidth: .infinity)
+        .background(
+            LinearGradient(
+                colors: [.purple, .indigo, .blue.opacity(0.8)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
+        .shadow(color: .purple.opacity(0.3), radius: 20, y: 10)
+    }
+    
+    // MARK: - Service Status
+    
+    private func serviceStatusSection(_ vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Service Status")
+            
+            HStack(spacing: DomoTheme.itemSpacing) {
+                // Distance to service
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "gauge.medium")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(vehicle.isServiceDue ? .orange : .green)
+                        Text("Next Service")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    
                     Text("\(vehicle.mileageUntilService.formatted()) km")
-                        .foregroundStyle(vehicle.isServiceDue ? .orange : .secondary)
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(vehicle.isServiceDue ? .orange : .primary)
+                    
+                    Text("remaining")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    
+                    // Progress bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color(.systemGray5))
+                                .frame(height: 6)
+                            
+                            let progress = min(1.0, max(0, 1.0 - Double(vehicle.mileageUntilService) / Double(max(1, vehicle.nextServiceMileage - (vehicle.currentMileage - vehicle.mileageUntilService)))))
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(vehicle.isServiceDue
+                                      ? LinearGradient(colors: [.orange, .red], startPoint: .leading, endPoint: .trailing)
+                                      : LinearGradient(colors: [.green, .mint], startPoint: .leading, endPoint: .trailing))
+                                .frame(width: geo.size.width * progress, height: 6)
+                        }
+                    }
+                    .frame(height: 6)
                 }
+                .domoCard()
+                
+                // Target mileage
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "flag.checkered")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.blue)
+                        Text("Target")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Text("\(vehicle.nextServiceMileage.formatted())")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                    
+                    Text("km")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    
+                    Spacer()
+                }
+                .domoCard()
             }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+    
+    // MARK: - Service Log
+    
+    private func serviceLogSection(_ vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Service History", action: "\(vehicle.serviceLogs.count) records") { }
             
-            // Service log
-            Section("Service Log") {
+            VStack(spacing: 8) {
                 ForEach(vehicle.serviceLogs.sorted { $0.date > $1.date }) { log in
                     ServiceLogRow(log: log)
                 }
@@ -68,30 +230,13 @@ struct CarView: View {
         }
     }
     
-    private func vehicleCard(_ vehicle: Vehicle) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label(vehicle.displayName, systemImage: "car.fill")
-                .font(.title2.bold())
-            Text(vehicle.plate)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .kerning(2)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-    }
-    
     private var emptyState: some View {
-        ContentUnavailableView(
-            "No Vehicle Added",
-            systemImage: "car.fill",
-            description: Text("Add your car to track maintenance and service history.")
-        )
+        DomoEmptyState(
+            icon: "car.fill",
+            title: "No Vehicle Added",
+            subtitle: "Add your car to track maintenance and service history.",
+            buttonTitle: "Add Vehicle"
+        ) { }
     }
 }
 
@@ -102,29 +247,48 @@ struct ServiceLogRow: View {
     
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: log.type.icon)
-                .frame(width: 28)
-                .foregroundStyle(.blue)
+            GradientIcon(
+                icon: log.type.icon,
+                gradient: gradientForType(log.type),
+                size: 42
+            )
             
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(log.type.rawValue)
-                    .font(.subheadline.weight(.medium))
-                Text(log.date.formatted(date: .abbreviated, time: .omitted))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline.weight(.semibold))
+                HStack(spacing: 4) {
+                    Text(log.date.formatted(date: .abbreviated, time: .omitted))
+                    Text("·")
+                    Text("\(log.mileage.formatted()) km")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
             
             Spacer()
             
-            VStack(alignment: .trailing, spacing: 3) {
-                if let cost = log.cost {
-                    Text(cost.formatted(.currency(code: "EUR")))
-                        .font(.subheadline)
-                }
-                Text("\(log.mileage.formatted()) km")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            if let cost = log.cost {
+                Text(cost.formatted(.currency(code: "EUR")))
+                    .font(.subheadline.bold())
             }
+        }
+        .padding(14)
+        .background(DomoTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+        .overlay(
+            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+        )
+    }
+    
+    private func gradientForType(_ type: ServiceLog.ServiceType) -> LinearGradient {
+        switch type {
+        case .oilChange: return LinearGradient(colors: [.yellow, .orange], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .tires: return LinearGradient(colors: [.gray, .secondary], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .brakes: return LinearGradient(colors: [.red, .orange], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .fullService: return LinearGradient(colors: [.blue, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .inspection: return LinearGradient(colors: [.green, .mint], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .other: return LinearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
 }
@@ -167,7 +331,9 @@ struct AddServiceLogView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.disabled(mileage.isEmpty)
+                    Button("Save") { save() }
+                        .fontWeight(.semibold)
+                        .disabled(mileage.isEmpty)
                 }
             }
         }
@@ -189,4 +355,5 @@ struct AddServiceLogView: View {
 #Preview {
     CarView()
         .environmentObject(DomoStore())
+        .preferredColorScheme(.dark)
 }

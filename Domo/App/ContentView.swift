@@ -3,10 +3,29 @@ import SwiftUI
 struct ContentView: View {
     
     @EnvironmentObject private var appState: AppState
+    @Namespace private var tabAnimation
     
     var body: some View {
+        Group {
+            if appState.isLoggedIn {
+                mainTabView
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+            } else {
+                LoginView()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+            }
+        }
+        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: appState.isLoggedIn)
+    }
+    
+    private var mainTabView: some View {
         TabView(selection: $appState.selectedTab) {
-            
             HomeView()
                 .tabItem {
                     Label(AppState.TabItem.home.title,
@@ -42,11 +61,13 @@ struct ContentView: View {
                 }
                 .tag(AppState.TabItem.vault)
         }
-        .tint(.accentColor)
+        .tint(.blue)
     }
 }
 
 #Preview {
     ContentView()
         .environmentObject(AppState())
+        .environmentObject(DomoStore())
+        .preferredColorScheme(.dark)
 }

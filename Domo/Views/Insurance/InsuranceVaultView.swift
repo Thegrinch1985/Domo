@@ -7,22 +7,38 @@ struct InsuranceVaultView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(store.insurancePolicies) { policy in
-                    NavigationLink(destination: PolicyDetailView(policy: policy)) {
-                        PolicyRow(policy: policy)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: DomoTheme.sectionSpacing) {
+                    // Coverage summary
+                    coverageSummary
+                    
+                    // Policies
+                    VStack(alignment: .leading, spacing: 14) {
+                        SectionHeader(title: "Policies")
+                        
+                        VStack(spacing: 10) {
+                            ForEach(store.insurancePolicies) { policy in
+                                NavigationLink(destination: PolicyDetailView(policy: policy)) {
+                                    PolicyRow(policy: policy)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
                 }
-                .onDelete(perform: store.deletePolicy)
+                .padding(.horizontal, DomoTheme.screenPadding)
+                .padding(.top, 8)
+                .padding(.bottom, 40)
             }
-            .listStyle(.plain)
+            .background(Color(.systemBackground))
             .navigationTitle("Insurance Vault")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showAddSheet = true } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.blue)
                     }
                 }
             }
@@ -31,13 +47,99 @@ struct InsuranceVaultView: View {
             }
             .overlay {
                 if store.insurancePolicies.isEmpty {
-                    ContentUnavailableView(
-                        "No Policies",
-                        systemImage: "lock.shield.fill",
-                        description: Text("Add your insurance policies to keep them safe and accessible.")
-                    )
+                    DomoEmptyState(
+                        icon: "shield.checkered",
+                        title: "No Policies",
+                        subtitle: "Add your insurance policies to keep them safe and accessible.",
+                        buttonTitle: "Add Policy"
+                    ) {
+                        showAddSheet = true
+                    }
                 }
             }
+        }
+    }
+    
+    // MARK: - Coverage Summary
+    
+    private var coverageSummary: some View {
+        VStack(spacing: 0) {
+            // Shield icon
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.1))
+                        .frame(width: 64, height: 64)
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+                
+                Text("\(store.insurancePolicies.count) Active Policies")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                
+                if let totalPremium = totalAnnualPremium {
+                    Text("\(totalPremium.formatted(.currency(code: "EUR"))) / year")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+            }
+            .padding(.top, 24)
+            .padding(.bottom, 18)
+            
+            // Coverage types
+            HStack(spacing: 0) {
+                ForEach(Array(coverageTypes.enumerated()), id: \.element) { index, type in
+                    if index > 0 {
+                        Rectangle()
+                            .fill(.white.opacity(0.15))
+                            .frame(width: 1, height: 24)
+                    }
+                    
+                    VStack(spacing: 4) {
+                        Image(systemName: type.icon)
+                            .font(.system(size: 14))
+                            .foregroundStyle(.white.opacity(0.8))
+                        Text(shortName(for: type))
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(16)
+            .background(.white.opacity(0.08))
+        }
+        .frame(maxWidth: .infinity)
+        .background(
+            LinearGradient(
+                colors: [.green.opacity(0.9), .teal, .cyan.opacity(0.8)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
+        .shadow(color: .green.opacity(0.25), radius: 20, y: 10)
+    }
+    
+    private var totalAnnualPremium: Double? {
+        let premiums = store.insurancePolicies.compactMap(\.premium)
+        return premiums.isEmpty ? nil : premiums.reduce(0, +)
+    }
+    
+    private var coverageTypes: [InsurancePolicy.PolicyType] {
+        Array(Set(store.insurancePolicies.map(\.type))).sorted { $0.rawValue < $1.rawValue }
+    }
+    
+    private func shortName(for type: InsurancePolicy.PolicyType) -> String {
+        switch type {
+        case .home: return "Home"
+        case .car: return "Car"
+        case .health: return "Health"
+        case .travel: return "Travel"
+        case .life: return "Life"
+        case .other: return "Other"
         }
     }
 }
@@ -49,44 +151,65 @@ struct PolicyRow: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(.quaternary)
-                    .frame(width: 52, height: 52)
-                Image(systemName: policy.type.icon)
-                    .font(.system(size: 22))
-                    .foregroundStyle(.blue)
-            }
+            GradientIcon(
+                icon: policy.type.icon,
+                gradient: gradientForType(policy.type),
+                size: 50,
+                iconScale: 0.42
+            )
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 5) {
                 Text(policy.type.rawValue)
                     .font(.subheadline.weight(.semibold))
-                Text(policy.provider)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(policy.policyNumber)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .fontDesign(.monospaced)
+                HStack(spacing: 4) {
+                    Text(policy.provider)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Text(policy.policyNumber)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .fontDesign(.monospaced)
+                }
             }
             
             Spacer()
             
             VStack(alignment: .trailing, spacing: 4) {
-                Text(policy.expiryDate.formatted(.dateTime.month().year()))
-                    .font(.caption.bold())
-                    .foregroundStyle(policy.isExpiringSoon ? .orange : .secondary)
                 if policy.isExpiringSoon {
-                    Text("Expiring soon")
-                        .font(.caption2)
+                    Text("Expiring")
+                        .font(.caption2.bold())
                         .foregroundStyle(.orange)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(.orange.opacity(0.12))
+                        .clipShape(Capsule())
+                } else {
+                    Text(policy.expiryDate.formatted(.dateTime.month(.abbreviated).year()))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
             }
         }
-        .padding(14)
-        .background(.quaternary.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.vertical, 4)
+        .padding(16)
+        .background(DomoTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+        .overlay(
+            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+        )
+    }
+    
+    private func gradientForType(_ type: InsurancePolicy.PolicyType) -> LinearGradient {
+        switch type {
+        case .home: return LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .car: return LinearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .health: return LinearGradient(colors: [.pink, .red], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .travel: return LinearGradient(colors: [.orange, .yellow], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .life: return LinearGradient(colors: [.green, .mint], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .other: return LinearGradient(colors: [.gray, .secondary], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
     }
 }
 
@@ -96,41 +219,117 @@ struct PolicyDetailView: View {
     let policy: InsurancePolicy
     
     var body: some View {
-        List {
-            Section("Policy") {
-                LabeledContent("Type", value: policy.type.rawValue)
-                LabeledContent("Provider", value: policy.provider)
-                LabeledContent("Policy Number", value: policy.policyNumber)
-            }
-            
-            Section("Coverage Period") {
-                LabeledContent("Start Date", value: policy.startDate.formatted(date: .long, time: .omitted))
-                LabeledContent("Expiry Date") {
-                    Text(policy.expiryDate.formatted(date: .long, time: .omitted))
-                        .foregroundStyle(policy.isExpiringSoon ? .orange : .primary)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                // Hero
+                VStack(spacing: 16) {
+                    GradientIcon(
+                        icon: policy.type.icon,
+                        gradient: LinearGradient(colors: [.blue, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        size: 64,
+                        iconScale: 0.42
+                    )
+                    
+                    Text(policy.type.rawValue)
+                        .font(.title2.bold())
+                    
+                    Text(policy.provider)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    
+                    // Expiry badge
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(policy.isExpiringSoon ? .orange : .green)
+                            .frame(width: 8, height: 8)
+                        Text("\(policy.daysUntilExpiry) days remaining")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(policy.isExpiringSoon ? .orange : .green)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background((policy.isExpiringSoon ? Color.orange : .green).opacity(0.1))
+                    .clipShape(Capsule())
                 }
-                LabeledContent("Days Remaining") {
-                    Text("\(policy.daysUntilExpiry) days")
-                        .foregroundStyle(policy.isExpiringSoon ? .orange : .secondary)
+                .padding(24)
+                .frame(maxWidth: .infinity)
+                .background(DomoTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DomoTheme.radiusLarge)
+                        .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                )
+                
+                // Details
+                VStack(spacing: 1) {
+                    detailRow(label: "Policy Number", value: policy.policyNumber, mono: true)
+                    detailRow(label: "Start Date", value: policy.startDate.formatted(date: .long, time: .omitted))
+                    detailRow(label: "Expiry Date", value: policy.expiryDate.formatted(date: .long, time: .omitted),
+                              highlight: policy.isExpiringSoon)
+                    if let premium = policy.premium {
+                        detailRow(label: "Annual Premium", value: premium.formatted(.currency(code: "EUR")))
+                    }
                 }
-            }
-            
-            if let premium = policy.premium {
-                Section("Premium") {
-                    LabeledContent("Annual Premium", value: premium.formatted(.currency(code: "EUR")))
-                }
-            }
-            
-            if let phone = policy.emergencyPhone {
-                Section("Emergency") {
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                        .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                )
+                
+                // Emergency contact
+                if let phone = policy.emergencyPhone {
                     Link(destination: URL(string: "tel:\(phone.filter { $0.isNumber })")!) {
-                        Label(phone, systemImage: "phone.fill")
+                        HStack(spacing: 12) {
+                            GradientIcon(
+                                icon: "phone.fill",
+                                gradient: LinearGradient(colors: [.green, .mint], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                size: 42
+                            )
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Emergency Contact")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text(phone)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(16)
+                        .background(DomoTheme.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                        )
                     }
                 }
             }
+            .padding(DomoTheme.screenPadding)
+            .padding(.bottom, 32)
         }
+        .background(Color(.systemBackground))
         .navigationTitle(policy.type.rawValue)
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private func detailRow(label: String, value: String, mono: Bool = false, highlight: Bool = false) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(highlight ? .orange : .primary)
+                .fontDesign(mono ? .monospaced : .default)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(DomoTheme.cardBackground)
     }
 }
 
@@ -154,7 +353,7 @@ struct AddPolicyView: View {
                 Section("Policy Details") {
                     Picker("Type", selection: $policyType) {
                         ForEach(InsurancePolicy.PolicyType.allCases, id: \.self) { t in
-                            Text(t.rawValue).tag(t)
+                            Label(t.rawValue, systemImage: t.icon).tag(t)
                         }
                     }
                     TextField("Provider", text: $provider)
@@ -178,6 +377,7 @@ struct AddPolicyView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
+                        .fontWeight(.semibold)
                         .disabled(provider.isEmpty || policyNumber.isEmpty)
                 }
             }
@@ -202,4 +402,5 @@ struct AddPolicyView: View {
 #Preview {
     InsuranceVaultView()
         .environmentObject(DomoStore())
+        .preferredColorScheme(.dark)
 }
