@@ -12,7 +12,7 @@ struct DomoApp: App {
             ContentView()
                 .environmentObject(appState)
                 .environmentObject(store)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(appState.appearanceMode.colorScheme)
                 .onAppear {
                     // modelContext is injected via .modelContainer below;
                     // we wire it into the store in the first view that has access.

@@ -333,7 +333,11 @@ struct ProfileSheet: View {
                 
                 Section("Preferences") {
                     Label("Notifications", systemImage: "bell.badge.fill")
-                    Label("Appearance", systemImage: "paintbrush.fill")
+                    NavigationLink {
+                        AppearanceSettingsView()
+                    } label: {
+                        Label("Appearance", systemImage: "paintbrush.fill")
+                    }
                     Label("Currency", systemImage: "eurosign.circle.fill")
                 }
                 

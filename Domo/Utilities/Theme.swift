@@ -33,8 +33,13 @@ enum DomoTheme {
         endPoint: .bottomTrailing
     )
     
-    static let cardBackground = Color(.systemGray6).opacity(0.5)
-    static let elevatedBackground = Color(.systemGray5).opacity(0.4)
+    static let cardBackground = Color(.secondarySystemGroupedBackground)
+    static let elevatedBackground = Color(.tertiarySystemGroupedBackground)
+    
+    /// Adaptive border opacity – lighter in light mode, more visible in dark
+    static func borderOpacity(for scheme: ColorScheme) -> Double {
+        scheme == .dark ? 0.06 : 0.10
+    }
     
     // MARK: - Spacing
     
