@@ -1,0 +1,69 @@
+import SwiftUI
+import Foundation
+
+// MARK: - Color + Hex
+
+extension Color {
+    /// Initialize a Color from a hex string like "#1DB954" or "1DB954"
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3:
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(.sRGB,
+                  red: Double(r) / 255,
+                  green: Double(g) / 255,
+                  blue: Double(b) / 255,
+                  opacity: Double(a) / 255)
+    }
+}
+
+// MARK: - Date Helpers
+
+extension Date {
+    var isToday: Bool {
+        Calendar.current.isDateInToday(self)
+    }
+    
+    var isThisWeek: Bool {
+        Calendar.current.isDate(self, equalTo: Date(), toGranularity: .weekOfYear)
+    }
+    
+    var isThisMonth: Bool {
+        Calendar.current.isDate(self, equalTo: Date(), toGranularity: .month)
+    }
+    
+    func daysUntil(_ date: Date) -> Int {
+        Calendar.current.dateComponents([.day], from: self, to: date).day ?? 0
+    }
+}
+
+// MARK: - Double Formatting
+
+extension Double {
+    var currencyFormatted: String {
+        formatted(.currency(code: "EUR"))
+    }
+}
+
+// MARK: - View Modifiers
+
+extension View {
+    /// Card-style background with rounded corners
+    func cardStyle(cornerRadius: CGFloat = 16) -> some View {
+        self
+            .padding(16)
+            .background(.quaternary)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    }
+}
