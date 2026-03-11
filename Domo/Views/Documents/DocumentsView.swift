@@ -4,6 +4,7 @@ struct DocumentsView: View {
     
     @EnvironmentObject private var store: DomoStore
     @State private var showAddSheet = false
+    @State private var showScanner = false
     @State private var searchText = ""
     @State private var selectedCategory: WarrantyItem.ProductCategory? = nil
     
@@ -47,6 +48,13 @@ struct DocumentsView: View {
             .navigationTitle("Warranties")
             .searchable(text: $searchText, prompt: "Search warranties")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showScanner = true } label: {
+                        Image(systemName: "barcode.viewfinder")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.blue)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showAddSheet = true } label: {
                         Image(systemName: "plus.circle.fill")
@@ -58,6 +66,9 @@ struct DocumentsView: View {
             }
             .sheet(isPresented: $showAddSheet) {
                 AddWarrantyView()
+            }
+            .fullScreenCover(isPresented: $showScanner) {
+                BarcodeScannerView()
             }
             .overlay {
                 if filteredWarranties.isEmpty && !searchText.isEmpty {

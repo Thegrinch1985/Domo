@@ -352,6 +352,58 @@ final class MaintenanceTask {
     }
 }
 
+// MARK: - Asset
+
+@Model
+final class Asset {
+    var id: UUID
+    var name: String
+    var brand: String
+    var model: String
+    var barcode: String
+    var purchaseDate: Date
+    var warrantyMonths: Int
+    var notes: String
+    var createdAt: Date
+    
+    init(
+        id: UUID = UUID(),
+        name: String,
+        brand: String = "",
+        model: String = "",
+        barcode: String = "",
+        purchaseDate: Date = .now,
+        warrantyMonths: Int = 12,
+        notes: String = "",
+        createdAt: Date = .now
+    ) {
+        self.id = id
+        self.name = name
+        self.brand = brand
+        self.model = model
+        self.barcode = barcode
+        self.purchaseDate = purchaseDate
+        self.warrantyMonths = warrantyMonths
+        self.notes = notes
+        self.createdAt = createdAt
+    }
+    
+    var warrantyExpiry: Date {
+        Calendar.current.date(byAdding: .month, value: warrantyMonths, to: purchaseDate) ?? purchaseDate
+    }
+    
+    var warrantyDaysRemaining: Int {
+        Calendar.current.dateComponents([.day], from: Date(), to: warrantyExpiry).day ?? 0
+    }
+    
+    var isWarrantyExpired: Bool { warrantyDaysRemaining < 0 }
+    var isWarrantyExpiringSoon: Bool { warrantyDaysRemaining <= 30 && warrantyDaysRemaining >= 0 }
+    
+    var displayLabel: String {
+        [brand, name].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+}
+
 // MARK: - User Account (stored in SwiftData)
 
 @Model

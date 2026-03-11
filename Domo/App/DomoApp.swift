@@ -26,7 +26,8 @@ struct DomoApp: App {
             ServiceLog.self,
             InsurancePolicy.self,
             MaintenanceTask.self,
-            UserAccount.self
+            UserAccount.self,
+            Asset.self
         ])
     }
 }

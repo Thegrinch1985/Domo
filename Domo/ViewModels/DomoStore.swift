@@ -33,6 +33,10 @@ final class DomoStore: ObservableObject {
         fetch(FetchDescriptor<MaintenanceTask>(sortBy: [SortDescriptor(\.title)]))
     }
     
+    var assets: [Asset] {
+        fetch(FetchDescriptor<Asset>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+    }
+    
     private func fetch<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) -> [T] {
         (try? modelContext?.fetch(descriptor)) ?? []
     }
@@ -167,6 +171,26 @@ final class DomoStore: ObservableObject {
     
     func markTaskComplete(_ task: MaintenanceTask) {
         task.lastCompleted = Date()
+        save()
+    }
+    
+    // MARK: - CRUD: Assets
+    
+    func addAsset(_ asset: Asset) {
+        modelContext?.insert(asset)
+        save()
+    }
+    
+    func deleteAsset(_ asset: Asset) {
+        modelContext?.delete(asset)
+        save()
+    }
+    
+    func deleteAssets(at offsets: IndexSet) {
+        let items = assets
+        for index in offsets {
+            modelContext?.delete(items[index])
+        }
         save()
     }
     
