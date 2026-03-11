@@ -352,6 +352,80 @@ final class MaintenanceTask {
     }
 }
 
+// MARK: - Receipt
+
+@Model
+final class Receipt {
+    var id: UUID
+    var title: String
+    var categoryRaw: String
+    var purchaseDate: Date
+    var warrantyMonths: Int
+    var receiptImage: Data?
+    var createdAt: Date
+    
+    init(
+        id: UUID = UUID(),
+        title: String,
+        category: ReceiptCategory = .general,
+        purchaseDate: Date = .now,
+        warrantyMonths: Int = 12,
+        receiptImage: Data? = nil,
+        createdAt: Date = .now
+    ) {
+        self.id = id
+        self.title = title
+        self.categoryRaw = category.rawValue
+        self.purchaseDate = purchaseDate
+        self.warrantyMonths = warrantyMonths
+        self.receiptImage = receiptImage
+        self.createdAt = createdAt
+    }
+    
+    var category: ReceiptCategory {
+        get { ReceiptCategory(rawValue: categoryRaw) ?? .general }
+        set { categoryRaw = newValue.rawValue }
+    }
+    
+    var warrantyExpiry: Date {
+        Calendar.current.date(byAdding: .month, value: warrantyMonths, to: purchaseDate) ?? purchaseDate
+    }
+    
+    var warrantyDaysRemaining: Int {
+        Calendar.current.dateComponents([.day], from: Date(), to: warrantyExpiry).day ?? 0
+    }
+    
+    var isWarrantyExpired: Bool { warrantyDaysRemaining < 0 }
+    
+    enum ReceiptCategory: String, CaseIterable, Identifiable, Codable {
+        case general     = "General"
+        case electronics = "Electronics"
+        case groceries   = "Groceries"
+        case clothing    = "Clothing"
+        case homeGarden  = "Home & Garden"
+        case health      = "Health"
+        case dining      = "Dining"
+        case other       = "Other"
+        
+        var id: String { rawValue }
+        
+        var label: String { rawValue }
+        
+        var icon: String {
+            switch self {
+            case .general:     return "doc.text"
+            case .electronics: return "desktopcomputer"
+            case .groceries:   return "cart"
+            case .clothing:    return "tshirt"
+            case .homeGarden:  return "house"
+            case .health:      return "heart"
+            case .dining:      return "fork.knife"
+            case .other:       return "ellipsis.circle"
+            }
+        }
+    }
+}
+
 // MARK: - Asset
 
 @Model

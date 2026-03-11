@@ -37,6 +37,10 @@ final class DomoStore: ObservableObject {
         fetch(FetchDescriptor<Asset>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
     }
     
+    var receipts: [Receipt] {
+        fetch(FetchDescriptor<Receipt>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+    }
+    
     private func fetch<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) -> [T] {
         (try? modelContext?.fetch(descriptor)) ?? []
     }
@@ -188,6 +192,26 @@ final class DomoStore: ObservableObject {
     
     func deleteAssets(at offsets: IndexSet) {
         let items = assets
+        for index in offsets {
+            modelContext?.delete(items[index])
+        }
+        save()
+    }
+    
+    // MARK: - CRUD: Receipts
+    
+    func addReceipt(_ receipt: Receipt) {
+        modelContext?.insert(receipt)
+        save()
+    }
+    
+    func deleteReceipt(_ receipt: Receipt) {
+        modelContext?.delete(receipt)
+        save()
+    }
+    
+    func deleteReceipts(at offsets: IndexSet) {
+        let items = receipts
         for index in offsets {
             modelContext?.delete(items[index])
         }
