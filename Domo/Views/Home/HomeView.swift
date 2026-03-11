@@ -6,22 +6,23 @@ struct HomeView: View {
     @EnvironmentObject private var store: DomoStore
     @State private var showProfile = false
     @State private var showSearch = false
+    @State private var showGreeting = false
     
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
                     
-                    // Greeting
-                    greetingHeader
+                    // Greeting — pops in then auto-hides
+                    if showGreeting {
+                        greetingHeader
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
                     
                     // Urgent alerts
                     if !store.urgentAlerts.isEmpty {
                         AlertBanner(alerts: store.urgentAlerts)
                     }
-                    
-                    // Quick stats
-                    statsRow
                     
                     // Dashboard: upcoming items
                     DashboardView()
@@ -31,8 +32,18 @@ struct HomeView: View {
                 .padding(.bottom, 100)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Home")
+            .navigationTitle("Domo")
             .navigationBarTitleDisplayMode(.large)
+            .onAppear {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    showGreeting = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    withAnimation(.easeOut(duration: 0.4)) {
+                        showGreeting = false
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -47,7 +58,7 @@ struct HomeView: View {
                     Button {
                         showProfile = true
                     } label: {
-                        ProfileAvatar(initials: appState.profileInitials, size: 32)
+                        ProfileAvatar(initials: appState.profileInitials, size: 32, imageData: appState.profileImageData)
                     }
                 }
             }
@@ -69,32 +80,6 @@ struct HomeView: View {
                 .foregroundStyle(.secondary)
             Text(appState.userName)
                 .font(.title.bold())
-        }
-    }
-    
-    private var statsRow: some View {
-        HStack(spacing: DomoTheme.itemSpacing) {
-            StatCard(
-                title: "Monthly",
-                value: store.totalMonthlySpend.formatted(.currency(code: "EUR")),
-                subtitle: "\(store.subscriptions.filter(\.isActive).count) subscriptions",
-                icon: "creditcard.fill",
-                gradient: DomoTheme.brandGradient
-            ) {
-                appState.selectedTab = .subscriptions
-            }
-            
-            StatCard(
-                title: "Warranties",
-                value: "\(store.warranties.count)",
-                subtitle: "\(store.warranties.filter(\.isExpiringSoon).count) expiring soon",
-                icon: "shield.lefthalf.filled",
-                gradient: store.warranties.contains(where: \.isExpiringSoon)
-                    ? DomoTheme.warmGradient
-                    : DomoTheme.successGradient
-            ) {
-                appState.selectedTab = .documents
-            }
         }
     }
     
@@ -202,16 +187,41 @@ private struct MaintenanceRow: View {
 
 struct ProfileSheet: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var store: DomoStore
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var showImagePicker = false
+    @State private var showExportShare = false
+    @State private var exportURL: URL?
+    @State private var showBackupAlert = false
+    @State private var backupMessage = ""
     
     var body: some View {
         NavigationStack {
             List {
-                // Profile header
+                // Profile header with avatar picker
                 Section {
-                    HStack(spacing: 16) {
-                        ProfileAvatar(initials: appState.profileInitials, size: 56)
-                        VStack(alignment: .leading, spacing: 4) {
+                    VStack(spacing: 16) {
+                        // Tappable avatar
+                        Button {
+                            showImagePicker = true
+                        } label: {
+                            ZStack(alignment: .bottomTrailing) {
+                                ProfileAvatar(
+                                    initials: appState.profileInitials,
+                                    size: 80,
+                                    imageData: appState.profileImageData
+                                )
+                                
+                                Image(systemName: "camera.circle.fill")
+                                    .font(.system(size: 26))
+                                    .foregroundStyle(.white, .blue)
+                                    .offset(x: 4, y: 4)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        
+                        VStack(spacing: 4) {
                             Text(appState.userName)
                                 .font(.title3.bold())
                             Text(appState.userEmail)
@@ -219,24 +229,63 @@ struct ProfileSheet: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .listRowBackground(Color.clear)
                 }
                 
+                // Notifications
+                Section("Notifications") {
+                    Toggle(isOn: $appState.notificationsEnabled) {
+                        Label("Push Notifications", systemImage: "bell.badge.fill")
+                    }
+                    .onChange(of: appState.notificationsEnabled) { _, enabled in
+                        if enabled {
+                            Task {
+                                let granted = await NotificationService.shared.requestPermission()
+                                if !granted {
+                                    appState.notificationsEnabled = false
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Preferences
                 Section("Preferences") {
-                    Label("Notifications", systemImage: "bell.badge.fill")
                     NavigationLink {
                         AppearanceSettingsView()
                     } label: {
                         Label("Appearance", systemImage: "paintbrush.fill")
                     }
-                    Label("Currency", systemImage: "eurosign.circle.fill")
+                    
+                    Picker(selection: $appState.currencyCode) {
+                        ForEach(AppState.supportedCurrencies, id: \.self) { code in
+                            Text(currencyLabel(for: code)).tag(code)
+                        }
+                    } label: {
+                        Label("Currency", systemImage: "banknote.fill")
+                    }
                 }
                 
+                // Data
                 Section("Data") {
-                    Label("Export Data", systemImage: "square.and.arrow.up.fill")
-                    Label("Backup & Sync", systemImage: "icloud.fill")
+                    Button {
+                        exportData()
+                    } label: {
+                        Label("Export Data", systemImage: "square.and.arrow.up.fill")
+                            .foregroundStyle(.primary)
+                    }
+                    
+                    Button {
+                        backupData()
+                    } label: {
+                        Label("Backup to Files", systemImage: "icloud.and.arrow.up.fill")
+                            .foregroundStyle(.primary)
+                    }
                 }
                 
+                // Sign out
                 Section {
                     Button(role: .destructive) {
                         dismiss()
@@ -252,6 +301,18 @@ struct ProfileSheet: View {
                         }
                     }
                 }
+                
+                // App version
+                Section {
+                    HStack {
+                        Spacer()
+                        Text("Domo v1.0")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Spacer()
+                    }
+                    .listRowBackground(Color.clear)
+                }
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
@@ -261,8 +322,169 @@ struct ProfileSheet: View {
                         .fontWeight(.semibold)
                 }
             }
+            .sheet(isPresented: $showImagePicker) {
+                ImagePicker { image in
+                    if let data = image.jpegData(compressionQuality: 0.7) {
+                        appState.profileImageData = data
+                    }
+                }
+            }
+            .sheet(isPresented: $showExportShare) {
+                if let url = exportURL {
+                    ShareSheet(items: [url])
+                }
+            }
+            .alert("Backup", isPresented: $showBackupAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(backupMessage)
+            }
         }
     }
+    
+    // MARK: - Currency Label
+    
+    private func currencyLabel(for code: String) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = code
+        let symbol = formatter.currencySymbol ?? code
+        return "\(code) (\(symbol))"
+    }
+    
+    // MARK: - Export
+    
+    private func exportData() {
+        let data = buildExportPayload()
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("Domo-Export-\(formattedDate()).json")
+        do {
+            try data.write(to: tempURL)
+            exportURL = tempURL
+            showExportShare = true
+        } catch {
+            backupMessage = "Export failed: \(error.localizedDescription)"
+            showBackupAlert = true
+        }
+    }
+    
+    // MARK: - Backup
+    
+    private func backupData() {
+        let data = buildExportPayload()
+        guard let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            backupMessage = "Could not access Documents."
+            showBackupAlert = true
+            return
+        }
+        let fileURL = docsURL.appendingPathComponent("Domo-Backup-\(formattedDate()).json")
+        do {
+            try data.write(to: fileURL)
+            backupMessage = "Backup saved to Files app.\n\(fileURL.lastPathComponent)"
+            showBackupAlert = true
+        } catch {
+            backupMessage = "Backup failed: \(error.localizedDescription)"
+            showBackupAlert = true
+        }
+    }
+    
+    private func formattedDate() -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd-HHmm"
+        return f.string(from: Date())
+    }
+    
+    private func buildExportPayload() -> Data {
+        var dict: [String: Any] = [
+            "exportDate": ISO8601DateFormatter().string(from: Date()),
+            "currency": appState.currencyCode
+        ]
+        
+        // Assets
+        dict["assets"] = store.assets.map { a in
+            ["name": a.name, "brand": a.brand, "category": a.categoryRaw,
+             "purchasePrice": a.purchasePrice, "purchaseDate": ISO8601DateFormatter().string(from: a.purchaseDate)] as [String : Any]
+        }
+        
+        // Warranties
+        dict["warranties"] = store.warranties.map { w in
+            ["productName": w.productName, "storeName": w.storeName, "price": w.price,
+             "category": w.categoryRaw, "warrantyYears": w.warrantyYears,
+             "purchaseDate": ISO8601DateFormatter().string(from: w.purchaseDate)] as [String : Any]
+        }
+        
+        // Subscriptions
+        dict["subscriptions"] = store.subscriptions.map { s in
+            ["name": s.name, "price": s.price, "billingCycle": s.billingCycleRaw,
+             "isActive": s.isActive, "renewalDate": ISO8601DateFormatter().string(from: s.renewalDate)] as [String : Any]
+        }
+        
+        // Vehicles
+        dict["vehicles"] = store.vehicles.map { v in
+            ["make": v.make, "model": v.model, "year": v.year, "plate": v.plate,
+             "currentMileage": v.currentMileage] as [String : Any]
+        }
+        
+        // Insurance
+        dict["insurancePolicies"] = store.insurancePolicies.map { p in
+            ["type": p.typeRaw, "provider": p.provider, "policyNumber": p.policyNumber,
+             "premium": p.premium ?? 0,
+             "startDate": ISO8601DateFormatter().string(from: p.startDate),
+             "expiryDate": ISO8601DateFormatter().string(from: p.expiryDate)] as [String : Any]
+        }
+        
+        // Maintenance
+        dict["maintenanceTasks"] = store.maintenanceTasks.map { t in
+            ["title": t.title, "intervalMonths": t.intervalMonths,
+             "estimatedCost": t.estimatedCost,
+             "notes": t.notes ?? ""] as [String : Any]
+        }
+        
+        return (try? JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys])) ?? Data()
+    }
+}
+
+// MARK: - Image Picker
+
+private struct ImagePicker: UIViewControllerRepresentable {
+    let onPick: (UIImage) -> Void
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+    
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onPick: (UIImage) -> Void
+        init(onPick: @escaping (UIImage) -> Void) { self.onPick = onPick }
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage {
+                onPick(image)
+            }
+            picker.dismiss(animated: true)
+        }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
+    }
+}
+
+// MARK: - Share Sheet
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - Add Maintenance Task
@@ -276,6 +498,7 @@ struct AddMaintenanceTaskView: View {
     @State private var hasBeenDone = false
     @State private var lastCompleted = Date()
     @State private var notes = ""
+    @State private var estimatedCost = ""
     @State private var enableReminder = true
     @State private var reminderDate = Date()
     
@@ -286,6 +509,8 @@ struct AddMaintenanceTaskView: View {
                     TextField("Task name (e.g. Boiler Service)", text: $title)
                     Stepper("Every \(intervalMonths) month\(intervalMonths > 1 ? "s" : "")",
                             value: $intervalMonths, in: 1...24)
+                    TextField("Estimated cost (€)", text: $estimatedCost)
+                        .keyboardType(.decimalPad)
                 }
                 Section("History") {
                     Toggle("Previously completed", isOn: $hasBeenDone)
@@ -323,7 +548,8 @@ struct AddMaintenanceTaskView: View {
             intervalMonths: intervalMonths,
             lastCompleted: hasBeenDone ? lastCompleted : nil,
             notes: notes.isEmpty ? nil : notes,
-            reminderDate: enableReminder ? reminderDate : nil
+            reminderDate: enableReminder ? reminderDate : nil,
+            estimatedCost: Double(estimatedCost) ?? 0
         )
         store.addTask(task)
         dismiss()

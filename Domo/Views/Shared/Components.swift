@@ -318,15 +318,24 @@ struct FlowLayout: Layout {
 struct ProfileAvatar: View {
     let initials: String
     var size: CGFloat = 36
+    var imageData: Data? = nil
     
     var body: some View {
         ZStack {
-            Circle()
-                .fill(DomoTheme.brandGradient)
-                .frame(width: size, height: size)
-            Text(initials)
-                .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+            if let imageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(DomoTheme.brandGradient)
+                    .frame(width: size, height: size)
+                Text(initials)
+                    .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
         }
     }
 }

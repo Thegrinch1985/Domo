@@ -40,19 +40,12 @@ struct ContentView: View {
                     }
                     .tag(AppState.TabItem.home)
                 
-                AssetsView()
+                ItemsView()
                     .tabItem {
-                        Label(AppState.TabItem.assets.title,
-                              systemImage: AppState.TabItem.assets.icon)
+                        Label(AppState.TabItem.items.title,
+                              systemImage: AppState.TabItem.items.icon)
                     }
-                    .tag(AppState.TabItem.assets)
-                
-                DocumentsView()
-                    .tabItem {
-                        Label(AppState.TabItem.documents.title,
-                              systemImage: AppState.TabItem.documents.icon)
-                    }
-                    .tag(AppState.TabItem.documents)
+                    .tag(AppState.TabItem.items)
                 
                 SubscriptionsView()
                     .tabItem {
@@ -70,10 +63,10 @@ struct ContentView: View {
                 
                 InsuranceVaultView()
                     .tabItem {
-                        Label(AppState.TabItem.vault.title,
-                              systemImage: AppState.TabItem.vault.icon)
+                        Label(AppState.TabItem.insurance.title,
+                              systemImage: AppState.TabItem.insurance.icon)
                     }
-                    .tag(AppState.TabItem.vault)
+                    .tag(AppState.TabItem.insurance)
             }
             .tint(.blue)
             

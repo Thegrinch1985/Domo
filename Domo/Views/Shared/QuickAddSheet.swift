@@ -10,7 +10,7 @@ struct QuickAddSheet: View {
     @State private var destination: Destination?
 
     enum Destination: Identifiable {
-        case document, warranty, subscription, vehicle, insurance, maintenance
+        case document, warranty, scanReceipt, subscription, vehicle, insurance, maintenance
 
         var id: Self { self }
     }
@@ -28,6 +28,11 @@ struct QuickAddSheet: View {
                         label: "Add Warranty",
                         color: .green,
                         destination: .warranty)
+
+                    row(icon: "receipt",
+                        label: "Scan Receipt → Warranty",
+                        color: .indigo,
+                        destination: .scanReceipt)
 
                     row(icon: "arrow.triangle.2.circlepath",
                         label: "Add Subscription",
@@ -111,6 +116,8 @@ struct QuickAddSheet: View {
             DocumentScannerView()
         case .warranty:
             AddWarrantyView()
+        case .scanReceipt:
+            ScanReceiptWarrantyView()
         case .subscription:
             AddSubscriptionView()
         case .vehicle:

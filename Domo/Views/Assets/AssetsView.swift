@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AssetsView: View {
     
+    @Binding var segment: Int
     @EnvironmentObject private var store: DomoStore
     @State private var showAddSheet = false
     @State private var searchText = ""
@@ -57,6 +58,14 @@ struct AssetsView: View {
             .navigationTitle("Assets")
             .searchable(text: $searchText, prompt: "Search assets")
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Picker("Section", selection: $segment) {
+                        Text("Assets").tag(0)
+                        Text("Warranties").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 200)
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Picker("View", selection: $viewMode) {
                         ForEach(ViewMode.allCases, id: \.self) { mode in
@@ -132,34 +141,65 @@ struct AssetsView: View {
     // MARK: - Summary Strip
     
     private var summaryStrip: some View {
-        HStack(spacing: 20) {
-            summaryItem(
-                value: "\(filteredAssets.count)",
-                label: "Items"
-            )
-            Divider().frame(height: 28)
-            summaryItem(
-                value: totalValue,
-                label: "Total Value"
-            )
-            Divider().frame(height: 28)
-            summaryItem(
-                value: "\(filteredAssets.flatMap(\.warranties).filter { !$0.isExpired }.count)",
-                label: "Active Warranties"
-            )
+        VStack(spacing: 0) {
+            // Hero value
+            VStack(spacing: 6) {
+                Text("Total Value")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                Text(totalValue)
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText())
+            }
+            .padding(.top, 24)
+            .padding(.bottom, 18)
+            
+            // Stats row
+            HStack(spacing: 0) {
+                statPill(icon: "cube.box.fill", value: "\(filteredAssets.count)", label: "Items", color: .blue)
+                
+                Divider()
+                    .frame(height: 32)
+                    .background(.white.opacity(0.2))
+                
+                statPill(icon: "shield.lefthalf.filled", value: "\(activeWarrantyCount)", label: "Warranties", color: .green)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .background(.white.opacity(0.1))
         }
         .frame(maxWidth: .infinity)
-        .domoCard(padding: 14)
+        .background(
+            LinearGradient(
+                colors: [.blue, .indigo.opacity(0.9)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
+        .shadow(color: .blue.opacity(0.25), radius: 16, y: 8)
     }
     
-    private func summaryItem(value: String, label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.subheadline.bold())
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+    private func statPill(icon: String, value: String, label: String, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(color)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                Text(label)
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.6))
+            }
         }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var activeWarrantyCount: Int {
+        filteredAssets.flatMap(\.warranties).filter { !$0.isExpired }.count
     }
     
     private var totalValue: String {
@@ -327,6 +367,6 @@ private struct AssetListRow: View {
 }
 
 #Preview {
-    AssetsView()
+    AssetsView(segment: .constant(0))
         .environmentObject(DomoStore())
 }

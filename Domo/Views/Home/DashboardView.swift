@@ -8,26 +8,13 @@ struct DashboardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DomoTheme.sectionSpacing) {
             
-            // Warranties expiring soon
-            dashboardSection(
-                title: "Warranties Expiring",
-                icon: "shield.lefthalf.filled",
-                iconGradient: DomoTheme.warmGradient,
-                isEmpty: expiringWarranties.isEmpty,
-                emptyText: "No warranties expiring soon"
-            ) {
-                appState.selectedTab = .documents
-            } content: {
-                ForEach(expiringWarranties) { item in
-                    warrantyCard(item)
-                }
-            }
+            // Hero: Life Overhead
+            LifeOverheadCard()
             
-            // Subscription renewals
+            // Upcoming Renewals
             dashboardSection(
                 title: "Upcoming Renewals",
                 icon: "arrow.triangle.2.circlepath",
-                iconGradient: DomoTheme.brandGradient,
                 isEmpty: upcomingRenewals.isEmpty,
                 emptyText: "No upcoming renewals"
             ) {
@@ -38,15 +25,14 @@ struct DashboardView: View {
                 }
             }
             
-            // Maintenance tasks due
+            // Maintenance Due
             dashboardSection(
                 title: "Maintenance Due",
                 icon: "wrench.and.screwdriver",
-                iconGradient: DomoTheme.successGradient,
                 isEmpty: upcomingMaintenance.isEmpty,
                 emptyText: "No tasks due soon"
             ) {
-                // Currently maintenance lives on Home; this scrolls to top
+                // no-op
             } content: {
                 ForEach(upcomingMaintenance) { task in
                     maintenanceCard(task)
@@ -56,14 +42,6 @@ struct DashboardView: View {
     }
     
     // MARK: - Data
-    
-    private var expiringWarranties: [WarrantyItem] {
-        store.warranties
-            .filter { !$0.isExpired }
-            .sorted { $0.daysRemaining < $1.daysRemaining }
-            .prefix(3)
-            .map { $0 }
-    }
     
     private var upcomingRenewals: [Subscription] {
         store.subscriptions
@@ -88,14 +66,12 @@ struct DashboardView: View {
     private func dashboardSection<Content: View>(
         title: String,
         icon: String,
-        iconGradient: LinearGradient,
         isEmpty: Bool,
         emptyText: String,
         onSeeAll: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 15, weight: .semibold))
@@ -133,47 +109,6 @@ struct DashboardView: View {
                 }
             }
         }
-    }
-    
-    // MARK: - Warranty Card
-    
-    private func warrantyCard(_ item: WarrantyItem) -> some View {
-        HStack(spacing: 14) {
-            // Status dot
-            Circle()
-                .fill(item.statusColor)
-                .frame(width: 10, height: 10)
-            
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.productName)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                
-                Text("Expires \(item.warrantyExpiry.formatted(.dateTime.month().day().year()))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            // Countdown
-            Text("\(item.daysRemaining)d")
-                .font(.subheadline.bold().monospacedDigit())
-                .foregroundStyle(item.isExpiringSoon ? .orange : .primary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(
-                    (item.isExpiringSoon ? Color.orange : Color.blue).opacity(0.1)
-                )
-                .clipShape(Capsule())
-        }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(item.isExpiringSoon ? .orange.opacity(0.2) : .clear, lineWidth: 1)
-        )
     }
     
     // MARK: - Subscription Card

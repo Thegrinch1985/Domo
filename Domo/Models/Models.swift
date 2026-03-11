@@ -15,6 +15,7 @@ final class WarrantyItem {
     var categoryRaw: String
     var documentURL: URL?
     var reminderDate: Date?
+    var receiptImageData: Data?
     var asset: Asset?
     
     init(
@@ -26,7 +27,8 @@ final class WarrantyItem {
         price: Double,
         category: ProductCategory,
         documentURL: URL? = nil,
-        reminderDate: Date? = nil
+        reminderDate: Date? = nil,
+        receiptImageData: Data? = nil
     ) {
         self.id = id
         self.productName = productName
@@ -37,6 +39,7 @@ final class WarrantyItem {
         self.categoryRaw = category.rawValue
         self.documentURL = documentURL
         self.reminderDate = reminderDate
+        self.receiptImageData = receiptImageData
     }
     
     var category: ProductCategory {
@@ -168,6 +171,9 @@ final class Vehicle {
     var plate: String
     var currentMileage: Int
     var nextServiceMileage: Int
+    var insuranceRenewalDate: Date?
+    var taxExpiryDate: Date?
+    var nctExpiryDate: Date?
     @Relationship(deleteRule: .cascade) var serviceLogs: [ServiceLog]
     
     init(
@@ -178,6 +184,9 @@ final class Vehicle {
         plate: String,
         currentMileage: Int,
         nextServiceMileage: Int,
+        insuranceRenewalDate: Date? = nil,
+        taxExpiryDate: Date? = nil,
+        nctExpiryDate: Date? = nil,
         serviceLogs: [ServiceLog] = []
     ) {
         self.id = id
@@ -187,12 +196,19 @@ final class Vehicle {
         self.plate = plate
         self.currentMileage = currentMileage
         self.nextServiceMileage = nextServiceMileage
+        self.insuranceRenewalDate = insuranceRenewalDate
+        self.taxExpiryDate = taxExpiryDate
+        self.nctExpiryDate = nctExpiryDate
         self.serviceLogs = serviceLogs
     }
     
     var displayName: String { "\(year) \(make) \(model)" }
     var mileageUntilService: Int { nextServiceMileage - currentMileage }
     var isServiceDue: Bool { mileageUntilService <= 1000 }
+    
+    var lastServiceDate: Date? {
+        serviceLogs.sorted { $0.date > $1.date }.first?.date
+    }
 }
 
 @Model
@@ -332,6 +348,7 @@ final class MaintenanceTask {
     var lastCompleted: Date?
     var notes: String?
     var reminderDate: Date?
+    var estimatedCost: Double
     var asset: Asset?
     
     init(
@@ -340,7 +357,8 @@ final class MaintenanceTask {
         intervalMonths: Int,
         lastCompleted: Date? = nil,
         notes: String? = nil,
-        reminderDate: Date? = nil
+        reminderDate: Date? = nil,
+        estimatedCost: Double = 0
     ) {
         self.id = id
         self.title = title
@@ -348,6 +366,7 @@ final class MaintenanceTask {
         self.lastCompleted = lastCompleted
         self.notes = notes
         self.reminderDate = reminderDate
+        self.estimatedCost = estimatedCost
     }
     
     var nextDueDate: Date? {

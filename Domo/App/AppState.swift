@@ -28,6 +28,36 @@ final class AppState: ObservableObject {
         }
     }
     
+    // MARK: - Notifications
+    
+    @Published var notificationsEnabled: Bool = UserDefaults.standard.bool(forKey: "notificationsEnabled") {
+        didSet {
+            UserDefaults.standard.set(notificationsEnabled, forKey: "notificationsEnabled")
+        }
+    }
+    
+    // MARK: - Currency
+    
+    static let supportedCurrencies = ["EUR", "USD", "GBP", "CAD", "AUD", "JPY", "CHF", "SEK", "NOK", "DKK"]
+    
+    @Published var currencyCode: String = UserDefaults.standard.string(forKey: "currencyCode") ?? "EUR" {
+        didSet {
+            UserDefaults.standard.set(currencyCode, forKey: "currencyCode")
+        }
+    }
+    
+    // MARK: - Profile Image
+    
+    @Published var profileImageData: Data? = UserDefaults.standard.data(forKey: "profileImageData") {
+        didSet {
+            if let data = profileImageData {
+                UserDefaults.standard.set(data, forKey: "profileImageData")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "profileImageData")
+            }
+        }
+    }
+    
     // MARK: - Appearance
     
     enum AppearanceMode: Int, CaseIterable, Identifiable {
@@ -74,31 +104,28 @@ final class AppState: ObservableObject {
     // MARK: - Tab Selection
     enum TabItem: Int, CaseIterable {
         case home
-        case assets
-        case documents
+        case items
         case subscriptions
         case car
-        case vault
+        case insurance
         
         var title: String {
             switch self {
-            case .home:          return "Home"
-            case .assets:        return "Assets"
-            case .documents:     return "Docs"
+            case .home:          return "Domo"
+            case .items:         return "Items"
             case .subscriptions: return "Subs"
             case .car:           return "Car"
-            case .vault:         return "Vault"
+            case .insurance:     return "Insurance"
             }
         }
         
         var icon: String {
             switch self {
             case .home:          return "house.fill"
-            case .assets:        return "cube.box.fill"
-            case .documents:     return "doc.text.fill"
+            case .items:         return "cube.box.fill"
             case .subscriptions: return "arrow.triangle.2.circlepath"
             case .car:           return "car.fill"
-            case .vault:         return "shield.checkered"
+            case .insurance:     return "shield.checkered"
             }
         }
     }

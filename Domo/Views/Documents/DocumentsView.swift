@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DocumentsView: View {
     
+    @Binding var segment: Int
     @EnvironmentObject private var store: DomoStore
     @State private var showAddSheet = false
     @State private var showScanner = false
@@ -32,6 +33,13 @@ struct DocumentsView: View {
                         .padding(.horizontal, DomoTheme.screenPadding)
                         .padding(.bottom, 16)
                     
+                    // Expiring soon section
+                    if !expiringSoon.isEmpty {
+                        expiringSoonSection
+                            .padding(.horizontal, DomoTheme.screenPadding)
+                            .padding(.bottom, 16)
+                    }
+                    
                     // Warranty list
                     LazyVStack(spacing: 8) {
                         ForEach(filteredWarranties) { item in
@@ -49,6 +57,14 @@ struct DocumentsView: View {
             .navigationTitle("Warranties")
             .searchable(text: $searchText, prompt: "Search warranties")
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Picker("Section", selection: $segment) {
+                        Text("Assets").tag(0)
+                        Text("Warranties").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 200)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { showAddSheet = true } label: {
@@ -166,6 +182,79 @@ struct DocumentsView: View {
             Text(label)
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
+        }
+    }
+    
+    // MARK: - Expiring Soon
+    
+    private var expiringSoon: [WarrantyItem] {
+        store.warranties
+            .filter { !$0.isExpired && $0.daysRemaining <= 90 }
+            .sorted { $0.daysRemaining < $1.daysRemaining }
+    }
+    
+    private var expiringSoonSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.orange)
+                Text("Expiring Soon")
+                    .font(.headline)
+                Spacer()
+                Text("\(expiringSoon.count)")
+                    .font(.subheadline.bold().monospacedDigit())
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(.orange.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            
+            VStack(spacing: 6) {
+                ForEach(expiringSoon) { item in
+                    NavigationLink(destination: WarrantyDetailView(item: item)) {
+                        HStack(spacing: 12) {
+                            Image(systemName: item.category.icon)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(item.statusColor)
+                                .frame(width: 32, height: 32)
+                                .background(item.statusColor.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.productName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Text("Expires \(item.warrantyExpiry.formatted(.dateTime.month(.abbreviated).day().year()))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Text("\(item.daysRemaining)d")
+                                .font(.subheadline.bold().monospacedDigit())
+                                .foregroundStyle(item.daysRemaining <= 30 ? .orange : .primary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(
+                                    (item.daysRemaining <= 30 ? Color.orange : Color.blue).opacity(0.1)
+                                )
+                                .clipShape(Capsule())
+                        }
+                        .padding(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(DomoTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+            .overlay(
+                RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                    .strokeBorder(.orange.opacity(0.2), lineWidth: 1)
+            )
         }
     }
 }
@@ -372,7 +461,7 @@ struct AddWarrantyView: View {
 }
 
 #Preview {
-    DocumentsView()
+    DocumentsView(segment: .constant(1))
         .environmentObject(DomoStore())
         .preferredColorScheme(.dark)
 }

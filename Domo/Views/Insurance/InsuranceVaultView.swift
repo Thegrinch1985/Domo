@@ -31,7 +31,7 @@ struct InsuranceVaultView: View {
                 .padding(.bottom, 40)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Insurance Vault")
+            .navigationTitle("Insurance")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showAddSheet = true } label: {
@@ -83,7 +83,7 @@ struct InsuranceVaultView: View {
                         .foregroundStyle(.white)
                 }
                 
-                Text("\(store.insurancePolicies.count) Active Policies")
+                Text("\(store.insurancePolicies.count) Policies")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
                 

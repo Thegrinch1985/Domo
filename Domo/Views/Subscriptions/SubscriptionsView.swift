@@ -12,6 +12,11 @@ struct SubscriptionsView: View {
                     // Spend hero card
                     spendHeroCard
                     
+                    // Spending distribution chart
+                    if !store.subscriptions.filter(\.isActive).isEmpty {
+                        spendingChart
+                    }
+                    
                     // Active subscriptions
                     let active = store.subscriptions.filter(\.isActive)
                     if !active.isEmpty {
@@ -86,6 +91,62 @@ struct SubscriptionsView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Spending Chart
+    
+    private var spendingChart: some View {
+        let active = store.subscriptions.filter(\.isActive).sorted { $0.monthlyEquivalent > $1.monthlyEquivalent }
+        let maxCost = active.map(\.monthlyEquivalent).max() ?? 1
+        
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Where your money goes")
+                .font(.headline)
+            
+            VStack(spacing: 10) {
+                ForEach(active) { sub in
+                    HStack(spacing: 12) {
+                        // Service icon
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: sub.colorHex).gradient)
+                                .frame(width: 30, height: 30)
+                            Image(systemName: sub.iconName)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                        
+                        // Name
+                        Text(sub.name)
+                            .font(.subheadline)
+                            .frame(width: 70, alignment: .leading)
+                            .lineLimit(1)
+                        
+                        // Bar
+                        GeometryReader { geo in
+                            let fraction = maxCost > 0 ? sub.monthlyEquivalent / maxCost : 0
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color(hex: sub.colorHex).gradient)
+                                .frame(width: geo.size.width * fraction)
+                                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: fraction)
+                        }
+                        .frame(height: 22)
+                        
+                        // Amount
+                        Text(sub.monthlyEquivalent.formatted(.currency(code: "EUR")))
+                            .font(.caption.bold().monospacedDigit())
+                            .frame(width: 65, alignment: .trailing)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(DomoTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+        .overlay(
+            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+        )
     }
     
     // MARK: - Spend Hero Card

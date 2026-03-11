@@ -53,6 +53,9 @@ struct CarView: View {
                 // Service status gauges
                 serviceStatusSection(vehicle)
                 
+                // Admin dates (insurance, tax, NCT, last service)
+                adminDatesSection(vehicle)
+                
                 // Attached documents
                 vehicleDocumentsSection(vehicle)
                 
@@ -224,6 +227,87 @@ struct CarView: View {
             }
             .fixedSize(horizontal: false, vertical: true)
         }
+    }
+    
+    // MARK: - Admin Dates
+    
+    private func adminDatesSection(_ vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Vehicle Admin")
+            
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                adminDateCard(
+                    icon: "shield.fill",
+                    label: "Insurance",
+                    date: vehicle.insuranceRenewalDate,
+                    gradient: LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                adminDateCard(
+                    icon: "doc.text.fill",
+                    label: "Road Tax",
+                    date: vehicle.taxExpiryDate,
+                    gradient: LinearGradient(colors: [.green, .mint], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                adminDateCard(
+                    icon: "checkmark.seal.fill",
+                    label: "NCT",
+                    date: vehicle.nctExpiryDate,
+                    gradient: LinearGradient(colors: [.orange, .yellow], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                adminDateCard(
+                    icon: "wrench.and.screwdriver.fill",
+                    label: "Last Service",
+                    date: vehicle.lastServiceDate,
+                    gradient: LinearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing),
+                    showsExpiry: false
+                )
+            }
+        }
+    }
+    
+    private func adminDateCard(icon: String, label: String, date: Date?, gradient: LinearGradient, showsExpiry: Bool = true) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(gradient)
+                Text(label)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            
+            if let date {
+                Text(date.formatted(date: .abbreviated, time: .omitted))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
+                if showsExpiry {
+                    let daysLeft = Calendar.current.dateComponents([.day], from: .now, to: date).day ?? 0
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(daysLeft < 0 ? .red : daysLeft <= 30 ? .orange : .green)
+                            .frame(width: 6, height: 6)
+                        Text(daysLeft < 0 ? "Expired" : daysLeft == 0 ? "Today" : "\(daysLeft)d left")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(daysLeft < 0 ? .red : daysLeft <= 30 ? .orange : .secondary)
+                    }
+                } else {
+                    let daysSince = Calendar.current.dateComponents([.day], from: date, to: .now).day ?? 0
+                    Text("\(daysSince)d ago")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("Not set")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                Text(" ")
+                    .font(.caption2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .domoCard()
     }
     
     // MARK: - Vehicle Documents
@@ -445,6 +529,12 @@ struct AddVehicleView: View {
     @State private var plate = ""
     @State private var currentMileage = ""
     @State private var nextServiceMileage = ""
+    @State private var insuranceDate: Date?
+    @State private var taxDate: Date?
+    @State private var nctDate: Date?
+    @State private var showInsurancePicker = false
+    @State private var showTaxPicker = false
+    @State private var showNCTPicker = false
     
     var body: some View {
         NavigationStack {
@@ -461,6 +551,11 @@ struct AddVehicleView: View {
                         .keyboardType(.numberPad)
                     TextField("Next Service Mileage (km)", text: $nextServiceMileage)
                         .keyboardType(.numberPad)
+                }
+                Section("Admin Dates") {
+                    optionalDateRow(label: "Insurance Renewal", date: $insuranceDate, showPicker: $showInsurancePicker)
+                    optionalDateRow(label: "Road Tax Expiry", date: $taxDate, showPicker: $showTaxPicker)
+                    optionalDateRow(label: "NCT Expiry", date: $nctDate, showPicker: $showNCTPicker)
                 }
             }
             .navigationTitle("Add Vehicle")
@@ -483,10 +578,59 @@ struct AddVehicleView: View {
             year: year,
             plate: plate.uppercased(),
             currentMileage: Int(currentMileage) ?? 0,
-            nextServiceMileage: Int(nextServiceMileage) ?? 10000
+            nextServiceMileage: Int(nextServiceMileage) ?? 10000,
+            insuranceRenewalDate: insuranceDate,
+            taxExpiryDate: taxDate,
+            nctExpiryDate: nctDate
         )
         store.addVehicle(vehicle)
         dismiss()
+    }
+    
+    private func optionalDateRow(label: String, date: Binding<Date?>, showPicker: Binding<Bool>) -> some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(label)
+                Spacer()
+                if let d = date.wrappedValue {
+                    Text(d.formatted(date: .abbreviated, time: .omitted))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Not set")
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation {
+                    if date.wrappedValue == nil {
+                        date.wrappedValue = Date()
+                    }
+                    showPicker.wrappedValue.toggle()
+                }
+            }
+            
+            if showPicker.wrappedValue, let _ = date.wrappedValue {
+                DatePicker(
+                    label,
+                    selection: Binding(
+                        get: { date.wrappedValue ?? Date() },
+                        set: { date.wrappedValue = $0 }
+                    ),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+                
+                Button("Clear", role: .destructive) {
+                    withAnimation {
+                        date.wrappedValue = nil
+                        showPicker.wrappedValue = false
+                    }
+                }
+                .font(.caption)
+            }
+        }
     }
 }
 
