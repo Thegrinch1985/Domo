@@ -71,8 +71,16 @@ struct SubscriptionsView: View {
                         icon: "arrow.triangle.2.circlepath",
                         title: "No Subscriptions",
                         subtitle: "Track your recurring payments to stay on top of your spending.",
-                        buttonTitle: "Add Subscription"
-                    ) {
+                        buttonTitle: "Add Subscription",
+                        action: { showAddSheet = true },
+                        suggestions: [
+                            .init(icon: "play.rectangle.fill", label: "Netflix"),
+                            .init(icon: "music.note", label: "Spotify"),
+                            .init(icon: "icloud.fill", label: "iCloud"),
+                            .init(icon: "figure.run", label: "Gym"),
+                            .init(icon: "play.fill", label: "YouTube"),
+                        ]
+                    ) { _ in
                         showAddSheet = true
                     }
                 }
@@ -216,6 +224,8 @@ struct AddSubscriptionView: View {
     @State private var cycle: Subscription.BillingCycle = .monthly
     @State private var category: Subscription.SubscriptionCategory = .entertainment
     @State private var renewalDate = Date()
+    @State private var enableReminder = true
+    @State private var reminderDate = Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date()
     
     var body: some View {
         NavigationStack {
@@ -237,6 +247,12 @@ struct AddSubscriptionView: View {
                 }
                 Section("Renewal") {
                     DatePicker("Next renewal", selection: $renewalDate, displayedComponents: .date)
+                }
+                Section("Reminder") {
+                    Toggle("Remind me before renewal", isOn: $enableReminder)
+                    if enableReminder {
+                        DatePicker("Reminder date", selection: $reminderDate, in: Date()..., displayedComponents: .date)
+                    }
                 }
             }
             .navigationTitle("Add Subscription")
@@ -260,7 +276,8 @@ struct AddSubscriptionView: View {
             renewalDate: renewalDate,
             category: category,
             iconName: "dollarsign.circle.fill",
-            colorHex: "#007AFF"
+            colorHex: "#007AFF",
+            reminderDate: enableReminder ? reminderDate : nil
         )
         store.addSubscription(sub)
         dismiss()

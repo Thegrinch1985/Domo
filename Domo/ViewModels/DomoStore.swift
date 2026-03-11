@@ -34,15 +34,48 @@ final class DomoStore: ObservableObject {
     }
     
     var assets: [Asset] {
-        fetch(FetchDescriptor<Asset>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+        fetch(FetchDescriptor<Asset>(sortBy: [SortDescriptor(\.name)]))
     }
     
     var receipts: [Receipt] {
         fetch(FetchDescriptor<Receipt>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
     }
     
+    var documents: [Document] {
+        fetch(FetchDescriptor<Document>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+    }
+    
     private func fetch<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) -> [T] {
         (try? modelContext?.fetch(descriptor)) ?? []
+    }
+    
+    // MARK: - Document Link Helpers
+    
+    func documents(forAssetID assetID: UUID) -> [Document] {
+        var descriptor = FetchDescriptor<Document>(
+            predicate: #Predicate<Document> { $0.linkedAssetID == assetID },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 50
+        return (try? modelContext?.fetch(descriptor)) ?? []
+    }
+    
+    func documents(forVehicleID vehicleID: UUID) -> [Document] {
+        var descriptor = FetchDescriptor<Document>(
+            predicate: #Predicate<Document> { $0.linkedVehicleID == vehicleID },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 50
+        return (try? modelContext?.fetch(descriptor)) ?? []
+    }
+    
+    func documents(forPolicyID policyID: UUID) -> [Document] {
+        var descriptor = FetchDescriptor<Document>(
+            predicate: #Predicate<Document> { $0.linkedPolicyID == policyID },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 50
+        return (try? modelContext?.fetch(descriptor)) ?? []
     }
     
     // MARK: - Computed Properties
@@ -83,9 +116,11 @@ final class DomoStore: ObservableObject {
     func addWarranty(_ item: WarrantyItem) {
         modelContext?.insert(item)
         save()
+        NotificationService.shared.scheduleWarrantyReminder(for: item)
     }
     
     func deleteWarranty(_ item: WarrantyItem) {
+        NotificationService.shared.cancelNotification(identifier: "warranty-\(item.id)")
         modelContext?.delete(item)
         save()
     }
@@ -103,9 +138,11 @@ final class DomoStore: ObservableObject {
     func addSubscription(_ sub: Subscription) {
         modelContext?.insert(sub)
         save()
+        NotificationService.shared.scheduleSubscriptionReminder(for: sub)
     }
     
     func deleteSubscription(_ sub: Subscription) {
+        NotificationService.shared.cancelNotification(identifier: "subscription-\(sub.id)")
         modelContext?.delete(sub)
         save()
     }
@@ -121,6 +158,11 @@ final class DomoStore: ObservableObject {
     func toggleSubscription(_ sub: Subscription) {
         sub.isActive.toggle()
         save()
+        if sub.isActive {
+            NotificationService.shared.scheduleSubscriptionReminder(for: sub)
+        } else {
+            NotificationService.shared.cancelNotification(identifier: "subscription-\(sub.id)")
+        }
     }
     
     // MARK: - CRUD: Vehicles
@@ -146,9 +188,11 @@ final class DomoStore: ObservableObject {
     func addPolicy(_ policy: InsurancePolicy) {
         modelContext?.insert(policy)
         save()
+        NotificationService.shared.scheduleInsuranceReminder(for: policy)
     }
     
     func deletePolicy(_ policy: InsurancePolicy) {
+        NotificationService.shared.cancelNotification(identifier: "insurance-\(policy.id)")
         modelContext?.delete(policy)
         save()
     }
@@ -166,9 +210,11 @@ final class DomoStore: ObservableObject {
     func addTask(_ task: MaintenanceTask) {
         modelContext?.insert(task)
         save()
+        NotificationService.shared.scheduleMaintenanceReminder(for: task)
     }
     
     func deleteTask(_ task: MaintenanceTask) {
+        NotificationService.shared.cancelNotification(identifier: "maintenance-\(task.id)")
         modelContext?.delete(task)
         save()
     }
@@ -176,6 +222,8 @@ final class DomoStore: ObservableObject {
     func markTaskComplete(_ task: MaintenanceTask) {
         task.lastCompleted = Date()
         save()
+        // Reschedule for the next due date
+        NotificationService.shared.scheduleMaintenanceReminder(for: task)
     }
     
     // MARK: - CRUD: Assets

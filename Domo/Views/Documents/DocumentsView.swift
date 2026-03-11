@@ -89,8 +89,16 @@ struct DocumentsView: View {
                         icon: "shield.fill",
                         title: "No Warranties Yet",
                         subtitle: "Add your first warranty to start tracking expiration dates.",
-                        buttonTitle: "Add Warranty"
-                    ) {
+                        buttonTitle: "Add Warranty",
+                        action: { showAddSheet = true },
+                        suggestions: [
+                            .init(icon: "tv", label: "TV"),
+                            .init(icon: "laptopcomputer", label: "Laptop"),
+                            .init(icon: "iphone", label: "Phone"),
+                            .init(icon: "washer", label: "Appliance"),
+                            .init(icon: "headphones", label: "Headphones"),
+                        ]
+                    ) { _ in
                         showAddSheet = true
                     }
                 }
@@ -295,6 +303,8 @@ struct AddWarrantyView: View {
     @State private var warrantyYears = 1
     @State private var purchaseDate = Date()
     @State private var category: WarrantyItem.ProductCategory = .electronics
+    @State private var enableReminder = true
+    @State private var reminderDate = Calendar.current.date(byAdding: .month, value: 11, to: Date()) ?? Date()
     
     var body: some View {
         NavigationStack {
@@ -317,6 +327,13 @@ struct AddWarrantyView: View {
                     DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
                     Stepper("Warranty: \(warrantyYears) year\(warrantyYears > 1 ? "s" : "")",
                             value: $warrantyYears, in: 1...10)
+                }
+                
+                Section("Reminder") {
+                    Toggle("Remind me before expiry", isOn: $enableReminder)
+                    if enableReminder {
+                        DatePicker("Reminder date", selection: $reminderDate, in: Date()..., displayedComponents: .date)
+                    }
                 }
                 
                 Section {
@@ -346,7 +363,8 @@ struct AddWarrantyView: View {
             purchaseDate: purchaseDate,
             warrantyYears: warrantyYears,
             price: Double(price) ?? 0,
-            category: category
+            category: category,
+            reminderDate: enableReminder ? reminderDate : nil
         )
         store.addWarranty(item)
         dismiss()

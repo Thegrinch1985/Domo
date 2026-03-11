@@ -51,8 +51,16 @@ struct InsuranceVaultView: View {
                         icon: "shield.checkered",
                         title: "No Policies",
                         subtitle: "Add your insurance policies to keep them safe and accessible.",
-                        buttonTitle: "Add Policy"
-                    ) {
+                        buttonTitle: "Add Policy",
+                        action: { showAddSheet = true },
+                        suggestions: [
+                            .init(icon: "house.fill", label: "Home"),
+                            .init(icon: "car.fill", label: "Car"),
+                            .init(icon: "heart.fill", label: "Health"),
+                            .init(icon: "airplane", label: "Travel"),
+                            .init(icon: "person.fill", label: "Life"),
+                        ]
+                    ) { _ in
                         showAddSheet = true
                     }
                 }
@@ -217,6 +225,7 @@ struct PolicyRow: View {
 
 struct PolicyDetailView: View {
     let policy: InsurancePolicy
+    @EnvironmentObject private var store: DomoStore
     
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -307,6 +316,9 @@ struct PolicyDetailView: View {
                         )
                     }
                 }
+                
+                // Attached documents
+                policyDocumentsSection
             }
             .padding(DomoTheme.screenPadding)
             .padding(.bottom, 32)
@@ -314,6 +326,75 @@ struct PolicyDetailView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle(policy.type.rawValue)
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    // MARK: - Documents Section
+    
+    private var policyDocumentsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Documents")
+            
+            let docs = store.documents(forPolicyID: policy.id)
+            if docs.isEmpty {
+                HStack(spacing: 10) {
+                    Image(systemName: "doc")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.tertiary)
+                    Text("No attached documents")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(DomoTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                )
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(docs) { doc in
+                        HStack(spacing: 12) {
+                            Image(systemName: "doc.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.blue)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(doc.title)
+                                    .font(.subheadline.weight(.medium))
+                                Text(doc.createdAt.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(doc.category)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.quaternary)
+                                .clipShape(Capsule())
+                        }
+                        .padding(14)
+                        .background(DomoTheme.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                        )
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                doc.linkedPolicyID = nil
+                                store.refresh()
+                            } label: {
+                                Label("Unlink", systemImage: "link.badge.plus")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
     private func detailRow(label: String, value: String, mono: Bool = false, highlight: Bool = false) -> some View {
@@ -346,6 +427,8 @@ struct AddPolicyView: View {
     @State private var expiryDate = Calendar.current.date(byAdding: .year, value: 1, to: Date())!
     @State private var premium = ""
     @State private var emergencyPhone = ""
+    @State private var enableReminder = true
+    @State private var reminderDate = Calendar.current.date(byAdding: .month, value: 11, to: Date()) ?? Date()
     
     var body: some View {
         NavigationStack {
@@ -370,6 +453,12 @@ struct AddPolicyView: View {
                     TextField("Emergency Phone", text: $emergencyPhone)
                         .keyboardType(.phonePad)
                 }
+                Section("Reminder") {
+                    Toggle("Remind me before expiry", isOn: $enableReminder)
+                    if enableReminder {
+                        DatePicker("Reminder date", selection: $reminderDate, in: Date()..., displayedComponents: .date)
+                    }
+                }
             }
             .navigationTitle("Add Policy")
             .navigationBarTitleDisplayMode(.inline)
@@ -392,7 +481,8 @@ struct AddPolicyView: View {
             startDate: startDate,
             expiryDate: expiryDate,
             premium: Double(premium),
-            emergencyPhone: emergencyPhone.isEmpty ? nil : emergencyPhone
+            emergencyPhone: emergencyPhone.isEmpty ? nil : emergencyPhone,
+            reminderDate: enableReminder ? reminderDate : nil
         )
         store.addPolicy(policy)
         dismiss()

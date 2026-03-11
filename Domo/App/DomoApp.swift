@@ -13,9 +13,8 @@ struct DomoApp: App {
                 .environmentObject(appState)
                 .environmentObject(store)
                 .preferredColorScheme(appState.appearanceMode.colorScheme)
-                .onAppear {
-                    // modelContext is injected via .modelContainer below;
-                    // we wire it into the store in the first view that has access.
+                .task {
+                    _ = await NotificationService.shared.requestPermission()
                 }
         }
         .modelContainer(for: [

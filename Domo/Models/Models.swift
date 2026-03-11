@@ -14,6 +14,8 @@ final class WarrantyItem {
     var price: Double
     var categoryRaw: String
     var documentURL: URL?
+    var reminderDate: Date?
+    var asset: Asset?
     
     init(
         id: UUID = UUID(),
@@ -23,7 +25,8 @@ final class WarrantyItem {
         warrantyYears: Int,
         price: Double,
         category: ProductCategory,
-        documentURL: URL? = nil
+        documentURL: URL? = nil,
+        reminderDate: Date? = nil
     ) {
         self.id = id
         self.productName = productName
@@ -33,6 +36,7 @@ final class WarrantyItem {
         self.price = price
         self.categoryRaw = category.rawValue
         self.documentURL = documentURL
+        self.reminderDate = reminderDate
     }
     
     var category: ProductCategory {
@@ -89,6 +93,7 @@ final class Subscription {
     var iconName: String
     var colorHex: String
     var isActive: Bool
+    var reminderDate: Date?
     
     init(
         id: UUID = UUID(),
@@ -99,7 +104,8 @@ final class Subscription {
         category: SubscriptionCategory,
         iconName: String,
         colorHex: String,
-        isActive: Bool = true
+        isActive: Bool = true,
+        reminderDate: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -110,6 +116,7 @@ final class Subscription {
         self.iconName = iconName
         self.colorHex = colorHex
         self.isActive = isActive
+        self.reminderDate = reminderDate
     }
     
     var billingCycle: BillingCycle {
@@ -256,6 +263,8 @@ final class InsurancePolicy {
     var premium: Double?
     var emergencyPhone: String?
     var documentURL: URL?
+    var reminderDate: Date?
+    var asset: Asset?
     
     init(
         id: UUID = UUID(),
@@ -266,7 +275,8 @@ final class InsurancePolicy {
         expiryDate: Date,
         premium: Double? = nil,
         emergencyPhone: String? = nil,
-        documentURL: URL? = nil
+        documentURL: URL? = nil,
+        reminderDate: Date? = nil
     ) {
         self.id = id
         self.typeRaw = type.rawValue
@@ -277,6 +287,7 @@ final class InsurancePolicy {
         self.premium = premium
         self.emergencyPhone = emergencyPhone
         self.documentURL = documentURL
+        self.reminderDate = reminderDate
     }
     
     var type: PolicyType {
@@ -320,19 +331,23 @@ final class MaintenanceTask {
     var intervalMonths: Int
     var lastCompleted: Date?
     var notes: String?
+    var reminderDate: Date?
+    var asset: Asset?
     
     init(
         id: UUID = UUID(),
         title: String,
         intervalMonths: Int,
         lastCompleted: Date? = nil,
-        notes: String? = nil
+        notes: String? = nil,
+        reminderDate: Date? = nil
     ) {
         self.id = id
         self.title = title
         self.intervalMonths = intervalMonths
         self.lastCompleted = lastCompleted
         self.notes = notes
+        self.reminderDate = reminderDate
     }
     
     var nextDueDate: Date? {
@@ -432,49 +447,108 @@ final class Receipt {
 final class Asset {
     var id: UUID
     var name: String
+    var categoryRaw: String
     var brand: String
-    var model: String
-    var barcode: String
+    var modelName: String
+    var serialNumber: String
     var purchaseDate: Date
-    var warrantyMonths: Int
+    var purchasePrice: Double
     var notes: String
     var createdAt: Date
+    
+    // Relationships
+    @Relationship(deleteRule: .nullify, inverse: \WarrantyItem.asset) var warranties: [WarrantyItem]
+    @Relationship(deleteRule: .nullify, inverse: \MaintenanceTask.asset) var maintenanceTasks: [MaintenanceTask]
+    @Relationship(deleteRule: .nullify, inverse: \InsurancePolicy.asset) var insurancePolicies: [InsurancePolicy]
     
     init(
         id: UUID = UUID(),
         name: String,
+        category: AssetCategory = .other,
         brand: String = "",
-        model: String = "",
-        barcode: String = "",
+        modelName: String = "",
+        serialNumber: String = "",
         purchaseDate: Date = .now,
-        warrantyMonths: Int = 12,
+        purchasePrice: Double = 0,
         notes: String = "",
+        warranties: [WarrantyItem] = [],
+        maintenanceTasks: [MaintenanceTask] = [],
+        insurancePolicies: [InsurancePolicy] = [],
         createdAt: Date = .now
     ) {
         self.id = id
         self.name = name
+        self.categoryRaw = category.rawValue
         self.brand = brand
-        self.model = model
-        self.barcode = barcode
+        self.modelName = modelName
+        self.serialNumber = serialNumber
         self.purchaseDate = purchaseDate
-        self.warrantyMonths = warrantyMonths
+        self.purchasePrice = purchasePrice
         self.notes = notes
+        self.warranties = warranties
+        self.maintenanceTasks = maintenanceTasks
+        self.insurancePolicies = insurancePolicies
         self.createdAt = createdAt
     }
     
-    var warrantyExpiry: Date {
-        Calendar.current.date(byAdding: .month, value: warrantyMonths, to: purchaseDate) ?? purchaseDate
+    var category: AssetCategory {
+        get { AssetCategory(rawValue: categoryRaw) ?? .other }
+        set { categoryRaw = newValue.rawValue }
     }
-    
-    var warrantyDaysRemaining: Int {
-        Calendar.current.dateComponents([.day], from: Date(), to: warrantyExpiry).day ?? 0
-    }
-    
-    var isWarrantyExpired: Bool { warrantyDaysRemaining < 0 }
-    var isWarrantyExpiringSoon: Bool { warrantyDaysRemaining <= 30 && warrantyDaysRemaining >= 0 }
     
     var displayLabel: String {
         [brand, name].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+    
+    var totalValue: Double { purchasePrice }
+    
+    var activeWarrantyCount: Int {
+        warranties.filter { !$0.isExpired }.count
+    }
+    
+    enum AssetCategory: String, CaseIterable, Identifiable, Codable {
+        case electronics = "Electronics"
+        case appliances  = "Appliances"
+        case furniture   = "Furniture"
+        case automotive  = "Automotive"
+        case homeGarden  = "Home & Garden"
+        case sports      = "Sports & Outdoors"
+        case clothing    = "Clothing"
+        case jewelry     = "Jewelry"
+        case tools       = "Tools"
+        case other       = "Other"
+        
+        var id: String { rawValue }
+        
+        var icon: String {
+            switch self {
+            case .electronics: return "laptopcomputer"
+            case .appliances:  return "washer"
+            case .furniture:   return "sofa"
+            case .automotive:  return "car"
+            case .homeGarden:  return "leaf"
+            case .sports:      return "figure.run"
+            case .clothing:    return "tshirt"
+            case .jewelry:     return "sparkles"
+            case .tools:       return "wrench.and.screwdriver"
+            case .other:       return "archivebox"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .electronics: return .blue
+            case .appliances:  return .orange
+            case .furniture:   return .brown
+            case .automotive:  return .red
+            case .homeGarden:  return .green
+            case .sports:      return .teal
+            case .clothing:    return .purple
+            case .jewelry:     return .pink
+            case .tools:       return .gray
+            case .other:       return .indigo
+            }
+        }
     }
 }
 

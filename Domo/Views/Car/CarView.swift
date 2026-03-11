@@ -53,6 +53,9 @@ struct CarView: View {
                 // Service status gauges
                 serviceStatusSection(vehicle)
                 
+                // Attached documents
+                vehicleDocumentsSection(vehicle)
+                
                 // Service log
                 serviceLogSection(vehicle)
             }
@@ -220,6 +223,75 @@ struct CarView: View {
                 .domoCard()
             }
             .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+    
+    // MARK: - Vehicle Documents
+    
+    private func vehicleDocumentsSection(_ vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Documents")
+            
+            let docs = store.documents(forVehicleID: vehicle.id)
+            if docs.isEmpty {
+                HStack(spacing: 10) {
+                    Image(systemName: "doc")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.tertiary)
+                    Text("No attached documents")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(DomoTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                )
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(docs) { doc in
+                        HStack(spacing: 12) {
+                            Image(systemName: "doc.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.purple)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(doc.title)
+                                    .font(.subheadline.weight(.medium))
+                                Text(doc.createdAt.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(doc.category)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.quaternary)
+                                .clipShape(Capsule())
+                        }
+                        .padding(14)
+                        .background(DomoTheme.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
+                                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                        )
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                doc.linkedVehicleID = nil
+                                store.refresh()
+                            } label: {
+                                Label("Unlink", systemImage: "link.badge.plus")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     

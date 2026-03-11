@@ -74,6 +74,7 @@ final class AppState: ObservableObject {
     // MARK: - Tab Selection
     enum TabItem: Int, CaseIterable {
         case home
+        case assets
         case documents
         case subscriptions
         case car
@@ -82,6 +83,7 @@ final class AppState: ObservableObject {
         var title: String {
             switch self {
             case .home:          return "Home"
+            case .assets:        return "Assets"
             case .documents:     return "Docs"
             case .subscriptions: return "Subs"
             case .car:           return "Car"
@@ -92,6 +94,7 @@ final class AppState: ObservableObject {
         var icon: String {
             switch self {
             case .home:          return "house.fill"
+            case .assets:        return "cube.box.fill"
             case .documents:     return "doc.text.fill"
             case .subscriptions: return "arrow.triangle.2.circlepath"
             case .car:           return "car.fill"

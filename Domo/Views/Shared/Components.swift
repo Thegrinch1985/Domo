@@ -191,7 +191,15 @@ struct DomoEmptyState: View {
     let subtitle: String
     var buttonTitle: String? = nil
     var action: (() -> Void)? = nil
-    
+    var suggestions: [Suggestion] = []
+    var onSuggestionTap: ((Suggestion) -> Void)? = nil
+
+    struct Suggestion: Identifiable {
+        let id = UUID()
+        let icon: String
+        let label: String
+    }
+
     var body: some View {
         VStack(spacing: 20) {
             ZStack {
@@ -225,8 +233,83 @@ struct DomoEmptyState: View {
                 }
                 .padding(.top, 4)
             }
+
+            if !suggestions.isEmpty {
+                VStack(spacing: 10) {
+                    Text("Popular items to track")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.tertiary)
+
+                    FlowLayout(spacing: 8) {
+                        ForEach(suggestions) { suggestion in
+                            Button {
+                                onSuggestionTap?(suggestion)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: suggestion.icon)
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text(suggestion.label)
+                                        .font(.caption.weight(.medium))
+                                }
+                                .foregroundStyle(.blue)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(.blue.opacity(0.08))
+                                .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .frame(maxWidth: 300)
+                }
+                .padding(.top, 4)
+            }
         }
         .padding(40)
+    }
+}
+
+// MARK: - Flow Layout
+
+/// A simple wrapping horizontal layout for suggestion chips.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        for (index, subview) in subviews.enumerated() {
+            let point = result.positions[index]
+            subview.place(at: CGPoint(x: bounds.minX + point.x, y: bounds.minY + point.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var totalWidth: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+            totalWidth = max(totalWidth, x - spacing)
+        }
+
+        return (CGSize(width: totalWidth, height: y + rowHeight), positions)
     }
 }
 

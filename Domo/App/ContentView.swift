@@ -40,6 +40,13 @@ struct ContentView: View {
                     }
                     .tag(AppState.TabItem.home)
                 
+                AssetsView()
+                    .tabItem {
+                        Label(AppState.TabItem.assets.title,
+                              systemImage: AppState.TabItem.assets.icon)
+                    }
+                    .tag(AppState.TabItem.assets)
+                
                 DocumentsView()
                     .tabItem {
                         Label(AppState.TabItem.documents.title,

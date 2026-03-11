@@ -5,63 +5,41 @@ struct AddAssetView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: DomoStore
     
-    // Pre-filled from scanner
-    let barcode: String
-    
     @State private var name = ""
     @State private var brand = ""
-    @State private var model = ""
+    @State private var modelName = ""
+    @State private var serialNumber = ""
+    @State private var selectedCategory: Asset.AssetCategory = .other
     @State private var purchaseDate = Date()
-    @State private var warrantyMonths: Int = 12
+    @State private var purchasePrice: Double = 0
     @State private var notes = ""
-    
-    @State private var showScanner = false
-    @State private var currentBarcode: String
-    
-    init(barcode: String = "") {
-        self.barcode = barcode
-        _currentBarcode = State(initialValue: barcode)
-    }
     
     var body: some View {
         NavigationStack {
             Form {
-                // Barcode section
-                Section("Barcode") {
-                    HStack {
-                        Image(systemName: "barcode")
-                            .foregroundStyle(.secondary)
-                        Text(currentBarcode.isEmpty ? "No barcode" : currentBarcode)
-                            .foregroundStyle(currentBarcode.isEmpty ? .secondary : .primary)
-                            .monospaced()
-                        Spacer()
-                        Button {
-                            showScanner = true
-                        } label: {
-                            Image(systemName: "barcode.viewfinder")
-                                .font(.system(size: 20))
-                        }
-                    }
-                }
-                
                 // Product Info
                 Section("Product Information") {
                     TextField("Name", text: $name)
                     TextField("Brand", text: $brand)
-                    TextField("Model", text: $model)
+                    TextField("Model", text: $modelName)
+                    TextField("Serial Number", text: $serialNumber)
+                    Picker("Category", selection: $selectedCategory) {
+                        ForEach(Asset.AssetCategory.allCases) { cat in
+                            Label(cat.rawValue, systemImage: cat.icon)
+                                .tag(cat)
+                        }
+                    }
                 }
                 
-                // Purchase & Warranty
-                Section("Purchase & Warranty") {
+                // Purchase
+                Section("Purchase") {
                     DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
-                    
-                    Stepper(value: $warrantyMonths, in: 0...120) {
-                        HStack {
-                            Text("Warranty")
-                            Spacer()
-                            Text("\(warrantyMonths) month\(warrantyMonths == 1 ? "" : "s")")
-                                .foregroundStyle(.secondary)
-                        }
+                    HStack {
+                        Text("Price")
+                        Spacer()
+                        TextField("0.00", value: $purchasePrice, format: .currency(code: "EUR"))
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
                     }
                 }
                 
@@ -85,20 +63,18 @@ struct AddAssetView: View {
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-            .sheet(isPresented: $showScanner) {
-                BarcodeScannerView()
-            }
         }
     }
     
     private func saveAsset() {
         let asset = Asset(
             name: name.trimmingCharacters(in: .whitespaces),
+            category: selectedCategory,
             brand: brand.trimmingCharacters(in: .whitespaces),
-            model: model.trimmingCharacters(in: .whitespaces),
-            barcode: currentBarcode,
+            modelName: modelName.trimmingCharacters(in: .whitespaces),
+            serialNumber: serialNumber.trimmingCharacters(in: .whitespaces),
             purchaseDate: purchaseDate,
-            warrantyMonths: warrantyMonths,
+            purchasePrice: purchasePrice,
             notes: notes.trimmingCharacters(in: .whitespaces)
         )
         store.addAsset(asset)
@@ -107,6 +83,6 @@ struct AddAssetView: View {
 }
 
 #Preview {
-    AddAssetView(barcode: "5901234123457")
+    AddAssetView()
         .environmentObject(DomoStore())
 }

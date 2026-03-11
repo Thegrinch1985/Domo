@@ -52,9 +52,7 @@ struct BarcodeScannerView: View {
                 // Reset so the scanner can fire again
                 scannedCode = nil
             }) {
-                if let code = scannedCode {
-                    AddAssetView(barcode: code)
-                }
+                AddAssetView()
             }
             .onAppear(perform: checkCameraAuth)
         }

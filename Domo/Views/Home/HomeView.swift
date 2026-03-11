@@ -5,6 +5,7 @@ struct HomeView: View {
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var store: DomoStore
     @State private var showProfile = false
+    @State private var showSearch = false
     
     var body: some View {
         NavigationStack {
@@ -33,6 +34,15 @@ struct HomeView: View {
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showSearch = true
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showProfile = true
@@ -43,6 +53,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showProfile) {
                 ProfileSheet()
+            }
+            .sheet(isPresented: $showSearch) {
+                GlobalSearchView()
             }
         }
     }
@@ -263,6 +276,8 @@ struct AddMaintenanceTaskView: View {
     @State private var hasBeenDone = false
     @State private var lastCompleted = Date()
     @State private var notes = ""
+    @State private var enableReminder = true
+    @State private var reminderDate = Date()
     
     var body: some View {
         NavigationStack {
@@ -281,6 +296,12 @@ struct AddMaintenanceTaskView: View {
                 Section("Notes") {
                     TextField("Optional notes...", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
+                }
+                Section("Reminder") {
+                    Toggle("Remind me when due", isOn: $enableReminder)
+                    if enableReminder {
+                        DatePicker("Reminder date", selection: $reminderDate, in: Date()..., displayedComponents: .date)
+                    }
                 }
             }
             .navigationTitle("Add Task")
@@ -301,7 +322,8 @@ struct AddMaintenanceTaskView: View {
             title: title,
             intervalMonths: intervalMonths,
             lastCompleted: hasBeenDone ? lastCompleted : nil,
-            notes: notes.isEmpty ? nil : notes
+            notes: notes.isEmpty ? nil : notes,
+            reminderDate: enableReminder ? reminderDate : nil
         )
         store.addTask(task)
         dismiss()
