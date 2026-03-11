@@ -26,11 +26,8 @@ struct HomeView: View {
                     // Quick actions grid
                     quickActions
                     
-                    // Maintenance section
-                    maintenanceSection
-                    
-                    // Recent warranties
-                    warrantiesSection
+                    // Dashboard: upcoming items
+                    DashboardView()
                 }
                 .padding(.horizontal, DomoTheme.screenPadding)
                 .padding(.top, 8)
