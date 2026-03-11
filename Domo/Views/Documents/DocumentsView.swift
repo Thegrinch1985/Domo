@@ -45,26 +45,22 @@ struct DocumentsView: View {
                     .padding(.bottom, 32)
                 }
             }
-            .background(Color(.systemBackground))
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Warranties")
             .searchable(text: $searchText, prompt: "Search warranties")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    HStack(spacing: 12) {
-                        Button { showScanner = true } label: {
-                            Image(systemName: "barcode.viewfinder")
-                                .font(.system(size: 20))
-                                .foregroundStyle(.blue)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { showAddSheet = true } label: {
+                            Label("Add Warranty", systemImage: "shield.lefthalf.filled")
                         }
                         Button { showAddReceipt = true } label: {
-                            Image(systemName: "receipt")
-                                .font(.system(size: 18))
-                                .foregroundStyle(.blue)
+                            Label("Add Receipt", systemImage: "receipt")
                         }
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showAddSheet = true } label: {
+                        Button { showScanner = true } label: {
+                            Label("Scan Barcode", systemImage: "barcode.viewfinder")
+                        }
+                    } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 22))
                             .symbolRenderingMode(.hierarchical)
@@ -150,7 +146,7 @@ struct DocumentsView: View {
         .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
         .overlay(
             RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
         )
     }
     
@@ -215,7 +211,7 @@ struct WarrantyDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
                 .overlay(
                     RoundedRectangle(cornerRadius: DomoTheme.radiusLarge)
-                        .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                 )
                 
                 // Details
@@ -229,7 +225,7 @@ struct WarrantyDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
                 .overlay(
                     RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                        .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                 )
                 
                 // Documents section
@@ -241,14 +237,14 @@ struct WarrantyDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
                     .overlay(
                         RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                            .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                            .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                     )
                 }
             }
             .padding(DomoTheme.screenPadding)
             .padding(.bottom, 32)
         }
-        .background(Color(.systemBackground))
+        .background(Color(.systemGroupedBackground))
         .navigationTitle(item.productName)
         .navigationBarTitleDisplayMode(.inline)
     }

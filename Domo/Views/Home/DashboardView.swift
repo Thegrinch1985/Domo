@@ -97,7 +97,9 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
             HStack {
-                GradientIcon(icon: icon, gradient: iconGradient, size: 32, iconScale: 0.42)
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.secondary)
                 
                 Text(title)
                     .font(.headline)
@@ -107,8 +109,8 @@ struct DashboardView: View {
                 Button {
                     onSeeAll()
                 } label: {
-                    Text("See all")
-                        .font(.subheadline.weight(.medium))
+                    Text("See All")
+                        .font(.subheadline)
                         .foregroundStyle(.blue)
                 }
             }

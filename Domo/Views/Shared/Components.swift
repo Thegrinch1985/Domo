@@ -115,7 +115,7 @@ struct WarrantyRow: View {
         .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
         .overlay(
             RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
         )
     }
 }

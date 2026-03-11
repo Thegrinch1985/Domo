@@ -163,7 +163,7 @@ struct LoginView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                 )
             }
             
@@ -200,7 +200,7 @@ struct LoginView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                 )
             }
             
@@ -458,7 +458,7 @@ struct SignUpView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
-                                    .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                             )
                         }
                         
@@ -482,7 +482,7 @@ struct SignUpView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
-                                    .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                             )
                         }
                         
@@ -599,7 +599,7 @@ struct SignUpView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
             )
         }
     }

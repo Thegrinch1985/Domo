@@ -5,14 +5,13 @@ struct HomeView: View {
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var store: DomoStore
     @State private var showProfile = false
-    @State private var showAddTask = false
     
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: DomoTheme.sectionSpacing) {
+                VStack(alignment: .leading, spacing: 24) {
                     
-                    // Hero greeting
+                    // Greeting
                     greetingHeader
                     
                     // Urgent alerts
@@ -23,43 +22,27 @@ struct HomeView: View {
                     // Quick stats
                     statsRow
                     
-                    // Quick actions grid
-                    quickActions
-                    
                     // Dashboard: upcoming items
                     DashboardView()
                 }
                 .padding(.horizontal, DomoTheme.screenPadding)
                 .padding(.top, 8)
-                .padding(.bottom, 40)
+                .padding(.bottom, 100)
             }
-            .background(Color(.systemBackground))
-            .navigationTitle("Domo")
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 14) {
-                        Button {
-                            // TODO: Open scan sheet
-                        } label: {
-                            Image(systemName: "camera.viewfinder")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        Button {
-                            showProfile = true
-                        } label: {
-                            ProfileAvatar(initials: appState.profileInitials, size: 32)
-                        }
+                    Button {
+                        showProfile = true
+                    } label: {
+                        ProfileAvatar(initials: appState.profileInitials, size: 32)
                     }
                 }
             }
             .sheet(isPresented: $showProfile) {
                 ProfileSheet()
-            }
-            .sheet(isPresented: $showAddTask) {
-                AddMaintenanceTaskView()
             }
         }
     }
@@ -102,79 +85,6 @@ struct HomeView: View {
         }
     }
     
-    private var quickActions: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Quick Actions")
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12)
-            ], spacing: 12) {
-                QuickActionButton(icon: "doc.viewfinder", label: "Scan", gradient: DomoTheme.brandGradient) {
-                    // TODO
-                }
-                QuickActionButton(icon: "plus.circle.fill", label: "Warranty", gradient: DomoTheme.successGradient) {
-                    appState.selectedTab = .documents
-                }
-                QuickActionButton(icon: "car.fill", label: "Service", gradient: .linearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing)) {
-                    appState.selectedTab = .car
-                }
-                QuickActionButton(icon: "shield.fill", label: "Insurance", gradient: DomoTheme.warmGradient) {
-                    appState.selectedTab = .vault
-                }
-            }
-        }
-    }
-    
-    private var maintenanceSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Maintenance", action: store.maintenanceTasks.isEmpty ? "Add Task" : "See all") {
-                showAddTask = true
-            }
-            
-            if store.maintenanceTasks.isEmpty {
-                HStack(spacing: 12) {
-                    Image(systemName: "wrench.and.screwdriver")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.secondary)
-                    Text("No maintenance tasks yet. Add one to stay on top of home upkeep.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DomoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(store.maintenanceTasks.prefix(3)) { task in
-                        MaintenanceRow(task: task) {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                store.markTaskComplete(task)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    private var warrantiesSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Warranties", action: "See all") {
-                appState.selectedTab = .documents
-            }
-            
-            VStack(spacing: 8) {
-                ForEach(store.warranties.prefix(3)) { item in
-                    WarrantyRow(item: item)
-                }
-            }
-        }
-    }
-    
     // MARK: - Helpers
     
     private var greetingText: String {
@@ -184,35 +94,6 @@ struct HomeView: View {
         case 12..<17: return "Good afternoon,"
         default: return "Good evening,"
         }
-    }
-}
-
-// MARK: - Quick Action Button
-
-private struct QuickActionButton: View {
-    let icon: String
-    let label: String
-    let gradient: LinearGradient
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(gradient.opacity(0.15))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: icon)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(gradient)
-                }
-                Text(label)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -299,7 +180,7 @@ private struct MaintenanceRow: View {
         .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
         .overlay(
             RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
         )
     }
 }

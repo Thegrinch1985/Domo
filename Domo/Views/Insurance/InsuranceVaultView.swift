@@ -30,7 +30,7 @@ struct InsuranceVaultView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 40)
             }
-            .background(Color(.systemBackground))
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Insurance Vault")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -197,7 +197,7 @@ struct PolicyRow: View {
         .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
         .overlay(
             RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
         )
     }
     
@@ -257,7 +257,7 @@ struct PolicyDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
                 .overlay(
                     RoundedRectangle(cornerRadius: DomoTheme.radiusLarge)
-                        .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                 )
                 
                 // Details
@@ -273,7 +273,7 @@ struct PolicyDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
                 .overlay(
                     RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                        .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                 )
                 
                 // Emergency contact
@@ -303,7 +303,7 @@ struct PolicyDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
                         .overlay(
                             RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
                         )
                     }
                 }
@@ -311,7 +311,7 @@ struct PolicyDetailView: View {
             .padding(DomoTheme.screenPadding)
             .padding(.bottom, 32)
         }
-        .background(Color(.systemBackground))
+        .background(Color(.systemGroupedBackground))
         .navigationTitle(policy.type.rawValue)
         .navigationBarTitleDisplayMode(.inline)
     }

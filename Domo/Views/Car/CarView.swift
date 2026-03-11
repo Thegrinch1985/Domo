@@ -15,7 +15,7 @@ struct CarView: View {
                     vehicleContent(vehicle)
                 }
             }
-            .background(Color(.systemBackground))
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("My Car")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -286,7 +286,7 @@ struct ServiceLogRow: View {
         .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
         .overlay(
             RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
         )
     }
     
