@@ -127,7 +127,7 @@ struct InsuranceVaultView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
         .shadow(color: .green.opacity(0.25), radius: 20, y: 10)
     }
     
@@ -200,13 +200,7 @@ struct PolicyRow: View {
                 }
             }
         }
-        .padding(16)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
     }
     
     private func gradientForType(_ type: InsurancePolicy.PolicyType) -> LinearGradient {
@@ -263,11 +257,8 @@ struct PolicyDetailView: View {
                 .padding(24)
                 .frame(maxWidth: .infinity)
                 .background(DomoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DomoTheme.radiusLarge)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
+                .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                 
                 // Details
                 VStack(spacing: 1) {
@@ -279,11 +270,8 @@ struct PolicyDetailView: View {
                         detailRow(label: "Annual Premium", value: premium.formatted(.currency(code: "EUR")))
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+                .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                 
                 // Emergency contact
                 if let phone = policy.emergencyPhone {
@@ -307,13 +295,7 @@ struct PolicyDetailView: View {
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(.tertiary)
                         }
-                        .padding(16)
-                        .background(DomoTheme.cardBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                        )
+                        .domoRow()
                     }
                 }
                 
@@ -345,13 +327,7 @@ struct PolicyDetailView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(DomoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .domoRow()
             } else {
                 VStack(spacing: 8) {
                     ForEach(docs) { doc in
@@ -376,13 +352,7 @@ struct PolicyDetailView: View {
                                 .background(.quaternary)
                                 .clipShape(Capsule())
                         }
-                        .padding(14)
-                        .background(DomoTheme.cardBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                        )
+                        .domoRow()
                         .contextMenu {
                             Button(role: .destructive) {
                                 doc.linkedPolicyID = nil

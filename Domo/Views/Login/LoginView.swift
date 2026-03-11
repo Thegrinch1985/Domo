@@ -75,22 +75,22 @@ struct LoginView: View {
                 .ignoresSafeArea()
             
             Circle()
-                .fill(.blue.opacity(0.12))
-                .frame(width: 300, height: 300)
+                .fill(.blue.opacity(0.08))
+                .frame(width: 340, height: 340)
+                .blur(radius: 100)
+                .offset(x: -100, y: -220)
+            
+            Circle()
+                .fill(.indigo.opacity(0.06))
+                .frame(width: 280, height: 280)
                 .blur(radius: 80)
-                .offset(x: -100, y: -200)
+                .offset(x: 140, y: -30)
             
             Circle()
-                .fill(.indigo.opacity(0.1))
-                .frame(width: 250, height: 250)
+                .fill(.purple.opacity(0.05))
+                .frame(width: 220, height: 220)
                 .blur(radius: 70)
-                .offset(x: 120, y: -50)
-            
-            Circle()
-                .fill(.purple.opacity(0.08))
-                .frame(width: 200, height: 200)
-                .blur(radius: 60)
-                .offset(x: -50, y: 300)
+                .offset(x: -60, y: 320)
         }
     }
     
@@ -114,7 +114,7 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 28)
                         .fill(DomoTheme.brandGradient)
                         .frame(width: 80, height: 80)
-                        .shadow(color: .blue.opacity(0.4), radius: 20, y: 8)
+                        .shadow(color: .blue.opacity(0.3), radius: 24, y: 10)
                     
                     Image(systemName: "house.fill")
                         .font(.system(size: 34, weight: .semibold))
@@ -139,17 +139,18 @@ struct LoginView: View {
     // MARK: - Form
     
     private var formSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 18) {
             // Email
             VStack(alignment: .leading, spacing: 8) {
                 Text("Email")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
+                    .padding(.leading, 2)
                 
                 HStack(spacing: 12) {
                     Image(systemName: "envelope.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.tertiary)
                         .frame(width: 20)
                     
                     TextField("your@email.com", text: $email)
@@ -159,12 +160,9 @@ struct LoginView: View {
                         .textInputAutocapitalization(.never)
                 }
                 .padding(16)
-                .background(Color(.systemGray6).opacity(0.6))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .background(DomoTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
             }
             
             // Password
@@ -172,11 +170,12 @@ struct LoginView: View {
                 Text("Password")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
+                    .padding(.leading, 2)
                 
                 HStack(spacing: 12) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.tertiary)
                         .frame(width: 20)
                     
                     if isSecure {
@@ -191,17 +190,14 @@ struct LoginView: View {
                         isSecure.toggle()
                     } label: {
                         Image(systemName: isSecure ? "eye.slash.fill" : "eye.fill")
-                            .font(.system(size: 15))
+                            .font(.system(size: 14))
                             .foregroundStyle(.tertiary)
                     }
                 }
                 .padding(16)
-                .background(Color(.systemGray6).opacity(0.6))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .background(DomoTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
             }
             
             // Sign In Button
@@ -249,13 +245,10 @@ struct LoginView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
-                        .background(Color(.systemGray6).opacity(0.6))
+                        .background(DomoTheme.cardBackground)
                         .foregroundStyle(.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                     }
                     .padding(.horizontal, DomoTheme.screenPadding)
                 }
@@ -280,8 +273,9 @@ struct LoginView: View {
             }
             .signInWithAppleButtonStyle(.white)
             .frame(height: 54)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .padding(.horizontal, DomoTheme.screenPadding)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
+            .padding(.horizontal, 24)
         }
         .opacity(animateContent ? 1 : 0)
         .offset(y: animateContent ? 0 : 20)
@@ -290,16 +284,16 @@ struct LoginView: View {
     private var dividerRow: some View {
         HStack(spacing: 16) {
             Rectangle()
-                .fill(.white.opacity(0.08))
-                .frame(height: 1)
+                .fill(Color(.separator).opacity(0.3))
+                .frame(height: 0.5)
             Text("or")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
             Rectangle()
-                .fill(.white.opacity(0.08))
-                .frame(height: 1)
+                .fill(Color(.separator).opacity(0.3))
+                .frame(height: 0.5)
         }
-        .padding(.horizontal, DomoTheme.screenPadding)
+        .padding(.horizontal, 24)
     }
     
     // MARK: - Footer
@@ -454,12 +448,9 @@ struct SignUpView: View {
                                 }
                             }
                             .padding(16)
-                            .background(Color(.systemGray6).opacity(0.6))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                            )
+                            .background(DomoTheme.cardBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                         }
                         
                         // Confirm Password
@@ -478,12 +469,9 @@ struct SignUpView: View {
                                     .textContentType(.newPassword)
                             }
                             .padding(16)
-                            .background(Color(.systemGray6).opacity(0.6))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                            )
+                            .background(DomoTheme.cardBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                         }
                         
                         // Password strength indicator
@@ -518,8 +506,8 @@ struct SignUpView: View {
                         .frame(height: 54)
                         .background(formIsValid ? DomoTheme.brandGradient : LinearGradient(colors: [.gray], startPoint: .leading, endPoint: .trailing))
                         .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: formIsValid ? .blue.opacity(0.3) : .clear, radius: 12, y: 6)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: formIsValid ? .blue.opacity(0.25) : .clear, radius: 16, y: 8)
                     }
                     .disabled(!formIsValid || isLoading)
                     .padding(.horizontal, DomoTheme.screenPadding)
@@ -528,16 +516,16 @@ struct SignUpView: View {
                     VStack(spacing: 16) {
                         HStack(spacing: 16) {
                             Rectangle()
-                                .fill(.white.opacity(0.08))
-                                .frame(height: 1)
+                                .fill(Color(.separator).opacity(0.3))
+                                .frame(height: 0.5)
                             Text("or")
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                             Rectangle()
-                                .fill(.white.opacity(0.08))
-                                .frame(height: 1)
+                                .fill(Color(.separator).opacity(0.3))
+                                .frame(height: 0.5)
                         }
-                        .padding(.horizontal, DomoTheme.screenPadding)
+                        .padding(.horizontal, 24)
                         
                         SignInWithAppleButton(.signUp) { request in
                             request.requestedScopes = [.fullName, .email]
@@ -546,8 +534,9 @@ struct SignUpView: View {
                         }
                         .signInWithAppleButtonStyle(.white)
                         .frame(height: 54)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .padding(.horizontal, DomoTheme.screenPadding)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
+                        .padding(.horizontal, 24)
                     }
                 }
                 .padding(.bottom, 40)
@@ -595,12 +584,9 @@ struct SignUpView: View {
                     .textInputAutocapitalization(capitalize)
             }
             .padding(16)
-            .background(Color(.systemGray6).opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-            )
+            .background(DomoTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
         }
     }
     

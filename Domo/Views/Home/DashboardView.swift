@@ -102,7 +102,8 @@ struct DashboardView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(DomoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+                .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
             } else {
                 VStack(spacing: 8) {
                     content()
@@ -139,9 +140,7 @@ struct DashboardView: View {
             Text(sub.price.formatted(.currency(code: "EUR")))
                 .font(.subheadline.bold())
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+        .domoRow()
     }
     
     // MARK: - Maintenance Card
@@ -172,9 +171,7 @@ struct DashboardView: View {
                     .foregroundStyle(task.isOverdue ? .red : task.isDueSoon ? .orange : .secondary)
             }
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
+        .domoRow()
     }
 }
 

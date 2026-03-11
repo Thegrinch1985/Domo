@@ -125,12 +125,9 @@ private struct AlertBanner: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.orange.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(.orange.opacity(0.2), lineWidth: 1)
-        )
+        .background(.orange.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+        .shadow(color: .orange.opacity(0.08), radius: 8, y: 2)
         .onTapGesture {
             if alerts.count > 1 {
                 withAnimation(.easeInOut(duration: 0.3)) {
@@ -175,11 +172,8 @@ private struct MaintenanceRow: View {
         }
         .padding(14)
         .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+        .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
     }
 }
 

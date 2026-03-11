@@ -167,11 +167,8 @@ struct DocumentsView: View {
         }
         .padding(16)
         .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+        .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
     }
     
     private func summaryStat(_ value: String, label: String, color: Color) -> some View {
@@ -250,11 +247,8 @@ struct DocumentsView: View {
                 }
             }
             .background(DomoTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-            .overlay(
-                RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                    .strokeBorder(.orange.opacity(0.2), lineWidth: 1)
-            )
+            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+            .shadow(color: .orange.opacity(0.08), radius: 8, y: 2)
         }
     }
 }
@@ -305,11 +299,8 @@ struct WarrantyDetailView: View {
                 .padding(24)
                 .frame(maxWidth: .infinity)
                 .background(DomoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DomoTheme.radiusLarge)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
+                .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                 
                 // Details
                 VStack(spacing: 1) {
@@ -319,11 +310,8 @@ struct WarrantyDetailView: View {
                     detailRow(label: "Purchased", value: item.purchaseDate.formatted(date: .long, time: .omitted))
                     detailRow(label: "Expires", value: item.warrantyExpiry.formatted(date: .long, time: .omitted), highlight: item.isExpiringSoon)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+                .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                 
                 // Documents section
                 if item.documentURL != nil {
@@ -331,11 +319,8 @@ struct WarrantyDetailView: View {
                         documentActionRow(icon: "doc.fill", title: "View Receipt", color: .blue)
                         documentActionRow(icon: "book.fill", title: "View Manual", color: .indigo)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                            .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                    )
+                    .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+                    .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
                 }
             }
             .padding(DomoTheme.screenPadding)

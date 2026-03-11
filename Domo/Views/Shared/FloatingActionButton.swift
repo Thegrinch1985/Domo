@@ -21,7 +21,7 @@ struct FloatingActionButton: View {
                         .foregroundStyle(.white)
                         .frame(width: 54, height: 54)
                         .background(.blue.gradient, in: Circle())
-                        .shadow(color: .blue.opacity(0.3), radius: 12, y: 5)
+                        .shadow(color: .blue.opacity(0.25), radius: 16, y: 6)
                         .scaleEffect(pressed ? 0.9 : 1)
                 }
                 .buttonStyle(.plain)

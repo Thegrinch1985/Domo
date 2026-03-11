@@ -67,8 +67,8 @@ struct LifeOverheadCard: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
-        .shadow(color: .indigo.opacity(0.35), radius: 20, y: 10)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
+        .shadow(color: .indigo.opacity(0.3), radius: 24, y: 12)
     }
 
     private func costRow(icon: String, label: String, amount: Double) -> some View {

@@ -154,8 +154,8 @@ struct CarView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
-        .shadow(color: .purple.opacity(0.3), radius: 20, y: 10)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
+        .shadow(color: .purple.opacity(0.25), radius: 20, y: 10)
     }
     
     // MARK: - Service Status
@@ -327,13 +327,7 @@ struct CarView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(DomoTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
+                .domoRow()
             } else {
                 VStack(spacing: 8) {
                     ForEach(docs) { doc in
@@ -358,13 +352,7 @@ struct CarView: View {
                                 .background(.quaternary)
                                 .clipShape(Capsule())
                         }
-                        .padding(14)
-                        .background(DomoTheme.cardBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                        )
+                        .domoRow()
                         .contextMenu {
                             Button(role: .destructive) {
                                 doc.linkedVehicleID = nil
@@ -437,13 +425,7 @@ struct ServiceLogRow: View {
                     .font(.subheadline.bold())
             }
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
     }
     
     private func gradientForType(_ type: ServiceLog.ServiceType) -> LinearGradient {

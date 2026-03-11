@@ -54,6 +54,12 @@ enum DomoTheme {
     static let radiusMedium: CGFloat = 16
     static let radiusLarge: CGFloat = 22
     static let radiusXL: CGFloat = 28
+    
+    // MARK: - Shadows
+    
+    static let cardShadowColor = Color.black.opacity(0.06)
+    static let cardShadowRadius: CGFloat = 8
+    static let cardShadowY: CGFloat = 2
 }
 
 // MARK: - Glass Card Modifier
@@ -132,16 +138,13 @@ extension View {
         modifier(ShimmerModifier())
     }
     
-    /// Standard card styling used throughout the app
+    /// Standard card styling used throughout the app — clean shadow, no border
     func domoCard(padding: CGFloat = DomoTheme.cardPadding) -> some View {
         self
             .padding(padding)
             .background(DomoTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-            .overlay(
-                RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-            )
+            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+            .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
     }
     
     /// Animated entrance from bottom
@@ -149,6 +152,22 @@ extension View {
         self
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(delay), value: true)
+    }
+    
+    /// Inline card row styling — shadow-based, no stroke
+    func domoRow() -> some View {
+        self
+            .padding(14)
+            .background(DomoTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+            .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
+    }
+    
+    /// Hero gradient card with prominent drop-shadow
+    func domoHeroCard(shadow: Color = .indigo.opacity(0.25)) -> some View {
+        self
+            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
+            .shadow(color: shadow, radius: 20, y: 10)
     }
 }
 

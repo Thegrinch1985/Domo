@@ -33,11 +33,10 @@ struct StatCard: View {
             action?()
         } label: {
             VStack(alignment: .leading, spacing: 14) {
-                // Icon with gradient background
                 ZStack {
                     Circle()
-                        .fill(gradient.opacity(0.2))
-                        .frame(width: 40, height: 40)
+                        .fill(gradient.opacity(0.15))
+                        .frame(width: 42, height: 42)
                     Image(systemName: icon)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(gradient)
@@ -73,7 +72,6 @@ struct WarrantyRow: View {
     
     var body: some View {
         HStack(spacing: 14) {
-            // Gradient icon
             GradientIcon(
                 icon: item.category.icon,
                 gradient: LinearGradient(
@@ -101,22 +99,15 @@ struct WarrantyRow: View {
             
             Spacer()
             
-            // Status pill
             Text("\(item.daysRemaining)d")
                 .font(.caption.bold())
                 .foregroundStyle(item.statusColor)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(item.statusColor.opacity(0.12))
+                .background(item.statusColor.opacity(0.1))
                 .clipShape(Capsule())
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
     }
 }
 
@@ -160,7 +151,7 @@ struct FilterChip: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : .secondary)
+                .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
@@ -168,15 +159,12 @@ struct FilterChip: View {
                         if isSelected {
                             DomoTheme.brandGradient
                         } else {
-                            LinearGradient(colors: [Color(.systemGray5)], startPoint: .top, endPoint: .bottom)
+                            LinearGradient(colors: [DomoTheme.cardBackground], startPoint: .top, endPoint: .bottom)
                         }
                     }
                 )
                 .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .strokeBorder(.white.opacity(isSelected ? 0 : 0.06), lineWidth: 1)
-                )
+                .shadow(color: isSelected ? .blue.opacity(0.2) : DomoTheme.cardShadowColor, radius: isSelected ? 6 : 4, y: isSelected ? 3 : 2)
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.2), value: isSelected)
@@ -201,24 +189,24 @@ struct DomoEmptyState: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             ZStack {
                 Circle()
-                    .fill(.blue.opacity(0.08))
+                    .fill(.blue.opacity(0.06))
                     .frame(width: 100, height: 100)
                 Image(systemName: icon)
-                    .font(.system(size: 38, weight: .light))
-                    .foregroundStyle(.blue.opacity(0.6))
+                    .font(.system(size: 36, weight: .light))
+                    .foregroundStyle(.blue.opacity(0.5))
             }
             
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 Text(title)
-                    .font(.headline)
+                    .font(.title3.weight(.semibold))
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: 260)
+                    .frame(maxWidth: 280)
             }
             
             if let buttonTitle, let action {
@@ -230,12 +218,13 @@ struct DomoEmptyState: View {
                         .padding(.vertical, 12)
                         .background(DomoTheme.brandGradient)
                         .clipShape(Capsule())
+                        .shadow(color: .blue.opacity(0.2), radius: 8, y: 4)
                 }
                 .padding(.top, 4)
             }
 
             if !suggestions.isEmpty {
-                VStack(spacing: 10) {
+                VStack(spacing: 12) {
                     Text("Popular items to track")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.tertiary)
@@ -254,7 +243,7 @@ struct DomoEmptyState: View {
                                 .foregroundStyle(.blue)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
-                                .background(.blue.opacity(0.08))
+                                .background(.blue.opacity(0.06))
                                 .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
@@ -328,10 +317,12 @@ struct ProfileAvatar: View {
                     .scaledToFill()
                     .frame(width: size, height: size)
                     .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 1))
             } else {
                 Circle()
                     .fill(DomoTheme.brandGradient)
                     .frame(width: size, height: size)
+                    .shadow(color: .blue.opacity(0.15), radius: 4, y: 2)
                 Text(initials)
                     .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)

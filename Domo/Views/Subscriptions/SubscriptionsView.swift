@@ -142,11 +142,8 @@ struct SubscriptionsView: View {
         }
         .padding(16)
         .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+        .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
     }
     
     // MARK: - Spend Hero Card
@@ -200,8 +197,8 @@ struct SubscriptionsView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
-        .shadow(color: .blue.opacity(0.3), radius: 20, y: 10)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
+        .shadow(color: .blue.opacity(0.25), radius: 20, y: 10)
     }
 }
 
@@ -250,13 +247,7 @@ struct SubscriptionRow: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(sub.isActive ? .primary : .secondary)
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
         .contextMenu {
             Button {
                 onToggle()

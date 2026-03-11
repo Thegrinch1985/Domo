@@ -171,11 +171,8 @@ struct AssetDetailView: View {
                 }
             }
             .background(DomoTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-            .overlay(
-                RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                    .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-            )
+            .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium, style: .continuous))
+            .shadow(color: DomoTheme.cardShadowColor, radius: DomoTheme.cardShadowRadius, y: DomoTheme.cardShadowY)
         }
     }
     
@@ -245,13 +242,7 @@ struct AssetDetailView: View {
                 .background(item.statusColor.opacity(0.12))
                 .clipShape(Capsule())
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
         .contextMenu {
             Button(role: .destructive) {
                 item.asset = nil
@@ -296,13 +287,7 @@ struct AssetDetailView: View {
             }
             Spacer()
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
         .contextMenu {
             Button(role: .destructive) {
                 doc.linkedAssetID = nil
@@ -359,13 +344,7 @@ struct AssetDetailView: View {
             }
             Spacer()
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
         .contextMenu {
             Button(role: .destructive) {
                 task.asset = nil
@@ -426,13 +405,7 @@ struct AssetDetailView: View {
                     .clipShape(Capsule())
             }
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
         .contextMenu {
             Button(role: .destructive) {
                 policy.asset = nil
@@ -455,13 +428,7 @@ struct AssetDetailView: View {
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
     }
 }
 

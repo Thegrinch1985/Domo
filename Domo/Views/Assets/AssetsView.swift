@@ -177,8 +177,8 @@ struct AssetsView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge))
-        .shadow(color: .blue.opacity(0.25), radius: 16, y: 8)
+        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusLarge, style: .continuous))
+        .shadow(color: .blue.opacity(0.25), radius: 20, y: 10)
     }
     
     private func statPill(icon: String, value: String, label: String, color: Color) -> some View {
@@ -356,13 +356,7 @@ private struct AssetListRow: View {
                 }
             }
         }
-        .padding(14)
-        .background(DomoTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DomoTheme.radiusMedium))
-        .overlay(
-            RoundedRectangle(cornerRadius: DomoTheme.radiusMedium)
-                .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .domoRow()
     }
 }
 
